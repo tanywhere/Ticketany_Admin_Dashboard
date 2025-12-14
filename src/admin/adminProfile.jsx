@@ -491,7 +491,6 @@ function adminProfile() {
           <div className="relative flex items-end gap-12 mb-8 px-8 pt-8">
             {[
               { key: "customers", label: "Customers" },
-              { key: "ids", label: "IDs" },
               { key: "events", label: "Events" },
             ].map((t) => (
               <button
@@ -574,53 +573,6 @@ function adminProfile() {
               {customersAgg.length === 0 && (
                 <div className="text-center text-gray-500 py-10">
                   No customers.
-                </div>
-              )}
-            </div>
-          )}
-
-          {!loading && !error && activeTab === "ids" && (
-            <div className="space-y-3 mt-4">
-              <div className="hidden md:grid grid-cols-7 gap-4 px-4 py-3 text-gray-700 font-semibold">
-                <div>ID</div>
-                <div>Event</div>
-                <div>Passport Name</div>
-                <div>Member Code</div>
-                <div>Priority Date</div>
-                <div className="text-right">Price</div>
-                <div className="text-right">Status</div>
-              </div>
-              <div className="border-b" />
-              {idRows.map((row, idx) => (
-                <div
-                  key={idx}
-                  className="grid grid-cols-1 md:grid-cols-7 gap-4 items-center px-4 py-3"
-                >
-                  <div className="font-medium">#{row.orderId}</div>
-                  <div className="truncate">{row.eventName}</div>
-                  <div className="truncate">{row.passportName}</div>
-                  <div>{row.memberCode}</div>
-                  <div className="truncate">{row.priorityDate || "—"}</div>
-                  <div className="text-right">
-                    {row.price ? `${row.price} THB` : "—"}
-                  </div>
-                  <div className="text-right flex items-center justify-end gap-2">
-                    <span className={statusChip(row.status)}>{row.status}</span>
-                    <button
-                      onClick={() => deleteOrder(row.orderId)}
-                      disabled={deletingIds.includes(Number(row.orderId))}
-                      className="text-red-600 hover:text-red-800 px-2 py-1 text-sm rounded"
-                    >
-                      {deletingIds.includes(Number(row.orderId))
-                        ? "Deleting..."
-                        : "Delete"}
-                    </button>
-                  </div>
-                </div>
-              ))}
-              {idRows.length === 0 && (
-                <div className="text-center text-gray-500 py-10">
-                  No records.
                 </div>
               )}
             </div>
