@@ -133,9 +133,8 @@ function adminHome() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-black mb-6">Admin Dashboard</h1>
+      
 
-      {/* Tabs */}
       <div className="bg-white shadow-sm">
         <div className="relative flex items-end gap-6 sm:gap-12 mb-4 sm:mb-8 px-4 sm:px-8 pt-8">
           {["tickets", "customers", "events"].map((tab) => (
@@ -153,7 +152,6 @@ function adminHome() {
             </button>
           ))}
 
-          {/* Underline */}
           <div
             className="absolute bottom-0 h-[2px] bg-pink-600 rounded transition-all duration-300"
             style={{
@@ -166,8 +164,9 @@ function adminHome() {
         <div className="border-b border-gray-200" />
       </div>
 
-      {/* Tab Content */}
+      
       {activeTab === "tickets" && <AllTickets />}
+
 
       {activeTab === "customers" && (
         <div className="bg-white shadow-sm rounded-lg overflow-hidden">
@@ -193,44 +192,69 @@ function adminHome() {
                       ID
                     </th>
                     <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                      Photo
+                    </th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
                       Name
                     </th>
                     <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
                       Email
                     </th>
                     <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
-                      Status
+                      Pending
+                    </th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                      Paid
                     </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {customers.map((customer) => (
-                    <tr
-                      key={customer.id}
-                      className="hover:bg-gray-50 transition-colors"
-                    >
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        {customer.id}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        {customer.name || "—"}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        {customer.email || "—"}
-                      </td>
-                      <td className="px-6 py-4 text-sm">
-                        <span
-                          className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
-                            customer.is_active
-                              ? "bg-green-100 text-green-800"
-                              : "bg-gray-100 text-gray-800"
-                          }`}
-                        >
-                          {customer.is_active ? "Active" : "Inactive"}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
+                  {customers.map((customer) => {
+                    const customerOrders = orders.filter(
+                      (o) => o.customer === customer.id
+                    );
+                    const customerTickets = tickets.filter((t) =>
+                      customerOrders.some((o) => o.id === t.order)
+                    );
+                    const pendingCount = customerTickets.filter(
+                      (t) => (t.status || "").toLowerCase() === "pending"
+                    ).length;
+                    const paidCount = customerTickets.filter(
+                      (t) => (t.status || "").toLowerCase() === "paid"
+                    ).length;
+
+                    return (
+                      <tr
+                        key={customer.id}
+                        className="hover:bg-gray-50 transition-colors"
+                      >
+                        <td className="px-6 py-4 text-sm text-gray-900">
+                          {customer.id}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-900">
+                          <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-xs font-semibold text-gray-700">
+                            {(customer.name || "U")[0].toUpperCase()}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-900">
+                          {customer.name || "—"}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-900">
+                          {customer.email || "—"}
+                        </td>
+                        <td className="px-6 py-4 text-sm">
+                          <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                            {pendingCount}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm">
+                          <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            {paidCount}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

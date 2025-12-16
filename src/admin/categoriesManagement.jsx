@@ -121,7 +121,6 @@ function CategoriesManagement() {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-6xl mx-auto space-y-8">
-        {/* Create Category Form */}
         <div className="bg-white shadow-md rounded-xl p-6 border border-gray-200">
           <h2 className="text-2xl font-bold mb-5 text-gray-800">
             Create New Category
@@ -153,7 +152,7 @@ function CategoriesManagement() {
 
               <label
                 htmlFor="category-image-upload"
-                className="cursor-pointer inline-block bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                className="cursor-pointer inline-block bg-[#ee6786] active:bg-[#d45573] text-white px-4 py-2 rounded-lg transition-all hover:opacity-80 hover:scale-105"
               >
                 Choose Image (Optional)
               </label>
@@ -178,10 +177,10 @@ function CategoriesManagement() {
             <button
               type="submit"
               disabled={isCreating}
-              className={`w-full py-2 rounded-lg font-semibold text-white transition-colors ${
+              className={`w-full py-2 rounded-lg font-semibold cursor-pointer text-white transition-all ${
                 isCreating
-                  ? "bg-green-400 cursor-not-allowed"
-                  : "bg-green-600 hover:bg-green-700"
+                  ? "bg-[#ee6786] active:bg-[#d45573] hover:opacity-80 hover:scale-105"
+                  : "bg-[#ee6786] active:bg-[#d45573] hover:opacity-80 hover:scale-105"
               }`}
             >
               {isCreating ? "Creating..." : "Create Category"}

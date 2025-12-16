@@ -62,7 +62,7 @@ function Sidebar() {
                   d="M8 5a2 2 0 012-2h4a2 2 0 012 2v2H8V5z"
                 />
               </svg>
-              <span>Dashboard</span>
+              <span>Home</span>
             </Link>
 
             <Link
@@ -83,7 +83,28 @@ function Sidebar() {
                   d="M4 4v6h6M20 20v-6h-6M4 14v6h6M20 10V4h-6"
                 />
               </svg>
-              <span>Status Change</span>
+              <span>Change Status</span>
+            </Link>
+
+            <Link
+              to="/admin/eventupload"
+              className="flex items-center px-4 py-2 text-sm rounded-lg hover:bg-gray-100"
+              title="Event Management"
+            >
+              <svg
+                className="w-5 h-5 mr-3"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M8 7h8M8 11h8M8 15h6"
+                />
+              </svg>
+              <span>Events</span>
             </Link>
 
             <Link
@@ -104,7 +125,7 @@ function Sidebar() {
                   d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 12v9m0-9l-3 3m3-3l3 3"
                 />
               </svg>
-              <span>Banner</span>
+              <span>Upload Banner</span>
             </Link>
 
             <Link
@@ -126,27 +147,6 @@ function Sidebar() {
                 />
               </svg>
               <span>Category</span>
-            </Link>
-
-            <Link
-              to="/admin/eventupload"
-              className="flex items-center px-4 py-2 text-sm rounded-lg hover:bg-gray-100"
-              title="Event Management"
-            >
-              <svg
-                className="w-5 h-5 mr-3"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M8 7h8M8 11h8M8 15h6"
-                />
-              </svg>
-              <span>Event</span>
             </Link>
           </div>
         </div>

@@ -136,9 +136,6 @@ function UploadBanner() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-      <div className="mx-auto mb-5 sm:mb-10 flex justify-center">
-          <AdminBanner />
-        </div>
       <div className="max-w-6xl mx-auto space-y-8">
         {/* Upload Form */}
         <div className="bg-white shadow-md rounded-xl p-6 border border-gray-200">
@@ -172,7 +169,7 @@ function UploadBanner() {
 
               <label
                 htmlFor="banner-upload"
-                className="cursor-pointer inline-block bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                className="cursor-pointer inline-block bg-[#ee6786] active:bg-[#d45573] hover:opacity-80 hover:scale-105 text-white px-4 py-2 rounded-lg transition-all"
               >
                 Choose Image
               </label>
@@ -197,10 +194,10 @@ function UploadBanner() {
             <button
               type="submit"
               disabled={isUploading}
-              className={`w-full py-2 rounded-lg font-semibold text-white transition-colors ${
+              className={`w-full py-2 rounded-lg font-semibold text-white cursor-pointer transition-all ${
                 isUploading
-                  ? "bg-red-400 cursor-not-allowed"
-                  : "bg-red-600 hover:bg-red-700"
+                  ? "bg-[#ee6786] active:bg-[#d45573] hover:opacity-80 hover:scale-105 cursor-not-allowed"
+                  : "bg-[#ee6786] active:bg-[#d45573] hover:opacity-80 hover:scale-105"
               }`}
             >
               {isUploading ? "Uploading..." : "Upload Banner"}
@@ -239,12 +236,21 @@ function UploadBanner() {
                   className="hidden"
                 />
 
-                <label
-                  htmlFor="edit-banner-upload"
-                  className="cursor-pointer inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  Change Image
-                </label>
+                <button
+  type="button"
+  className="
+    cursor-pointer inline-block
+    bg-[#ee6786] active:bg-[#d45573]
+    text-white px-4 py-2 rounded-lg
+    transition-all hover:opacity-80 hover:scale-105
+    focus:outline-none focus:ring-0
+    active:outline-none
+  "
+  style={{ WebkitTapHighlightColor: "transparent" }}
+>
+  Change Image
+</button>
+
 
                 {editImage && (
                   <span className="text-gray-700 font-medium ml-2">
@@ -269,8 +275,8 @@ function UploadBanner() {
                   disabled={isUploading}
                   className={`flex-1 py-2 rounded-lg font-semibold text-white transition-colors ${
                     isUploading
-                      ? "bg-blue-400 cursor-not-allowed"
-                      : "bg-blue-600 hover:bg-blue-700"
+                      ? "bg-[#ee6786] active:bg-[#d45573] cursor-not-allowed"
+                      : "bg-[#ee6786] active:bg-[#d45573]"
                   }`}
                 >
                   {isUploading ? "Updating..." : "Update Banner"}
