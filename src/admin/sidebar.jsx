@@ -42,8 +42,8 @@ function Sidebar() {
               to="/admin"
               end
               className={({ isActive }) =>
-                `flex items-center px-4 py-2 text-sm rounded-lg
-     ${isActive ? "bg-gray-200 font-semibold" : "hover:bg-gray-100"}`
+                `flex items-center px-4 py-2 text-sm rounded-lg transition-colors
+     ${isActive ? "bg-gray-200 font-semibold text-[#ee6786ff]" : "hover:bg-gray-100"}`
               }
               title="Dashboard"
             >
@@ -72,8 +72,8 @@ function Sidebar() {
             <NavLink
               to="/admin/statuschange"
               className={({ isActive }) =>
-                `flex items-center px-4 py-2 text-sm rounded-lg 
-     ${isActive ? "bg-gray-200 font-semibold" : "hover:bg-gray-100"}`
+                `flex items-center px-4 py-2 text-sm rounded-lg transition-colors 
+     ${isActive ? "bg-gray-200 font-semibold text-[#ee6786ff]" : "hover:bg-gray-100"}`
               }
               title="Status Change"
             >
@@ -96,8 +96,8 @@ function Sidebar() {
             <NavLink
               to="/admin/eventupload"
               className={({ isActive }) =>
-                `flex items-center px-4 py-2 text-sm rounded-lg 
-     ${isActive ? "bg-gray-200 font-semibold" : "hover:bg-gray-100"}`
+                `flex items-center px-4 py-2 text-sm rounded-lg transition-colors 
+     ${isActive ? "bg-gray-200 font-semibold text-[#ee6786ff]" : "hover:bg-gray-100"}`
               }
               title="Event Management"
             >
@@ -120,8 +120,8 @@ function Sidebar() {
             <NavLink
               to="/admin/uploadbanner"
               className={({ isActive }) =>
-                `flex items-center px-4 py-2 text-sm rounded-lg 
-     ${isActive ? "bg-gray-200 font-semibold" : "hover:bg-gray-100"}`
+                `flex items-center px-4 py-2 text-sm rounded-lg transition-colors 
+     ${isActive ? "bg-gray-200 font-semibold text-[#ee6786ff]" : "hover:bg-gray-100"}`
               }
               title="Banner Management"
             >
@@ -144,8 +144,8 @@ function Sidebar() {
             <NavLink
               to="/admin/categories"
               className={({ isActive }) =>
-                `flex items-center px-4 py-2 text-sm rounded-lg 
-     ${isActive ? "bg-gray-200 font-semibold" : "hover:bg-gray-100"}`
+                `flex items-center px-4 py-2 text-sm rounded-lg transition-colors 
+     ${isActive ? "bg-gray-200 font-semibold text-[#ee6786ff]" : "hover:bg-gray-100"}`
               }
               title="Category Management"
             >
@@ -169,25 +169,14 @@ function Sidebar() {
       </nav>
 
       <div className="absolute bottom-0 w-full border-t-2 border-black bg-white">
-        <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center">
-            <img
-              src="https://ui-avatars.com/api/?name=Admin+User"
-              alt="Admin"
-              className="w-8 h-8 rounded-full border border-black"
-            />
-            <div className="ml-3">
-              <p className="text-sm font-medium">Admin User</p>
-              <p className="text-xs text-gray-600">admin@example.com</p>
-            </div>
-          </div>
+        <div className="flex items-center justify-center px-4 py-4">
           <button
             onClick={handleLogout}
-            className="flex items-center px-3 py-1 text-sm text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors"
+            className="flex items-center gap-3 px-4 py-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors"
             title="Logout"
           >
             <svg
-              className="w-4 h-4"
+              className="w-6 h-6"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -199,6 +188,7 @@ function Sidebar() {
                 d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
               />
             </svg>
+            <span className="text-base font-semibold">Sign Out</span>
           </button>
         </div>
       </div>
