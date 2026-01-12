@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router";
+import { createBrowserRouter, Navigate } from "react-router";
 import AdminLayout from "../admin/adminLayout";
 import AdminAuthGuard from "../admin/AdminAuthGuard";
 import AdminLogin from "../admin/AdminLogin";
@@ -13,6 +13,10 @@ import addNewEvents from "../adminComponents/addNewEvents";
 import AllTickets from "../admin/AllTickets";
 
 let router = createBrowserRouter([
+  {
+    path: "/",
+    Component: () => <Navigate to="/admin" replace />,
+  },
   {
     path: "/admin/login",
     Component: AdminLogin,

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { FiRefreshCw } from "react-icons/fi";
+import { FiDownload, FiRefreshCw, FiX } from "react-icons/fi";
 
 
 const API_BASE = "http://127.0.0.1:8000";
@@ -8,9 +8,12 @@ function AllTickets() {
   const [tickets, setTickets] = useState([]);
   const [orders, setOrders] = useState([]);
   const [customers, setCustomers] = useState([]);
+  const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [error, setError] = useState("");
   const [filter, setFilter] = useState("all");
+  const [selectedTicket, setSelectedTicket] = useState(null);
 
   const authHeaders = () => {
     const token =
@@ -38,18 +41,59 @@ function AllTickets() {
     setLoading(true);
     setError("");
     try {
-      const [ts, os, cs] = await Promise.all([
+      const [ts, os, cs, es] = await Promise.all([
         fetchAll(`${API_BASE}/api/tickets/`),
         fetchAll(`${API_BASE}/api/orders/`),
         fetchAll(`${API_BASE}/api/customers/`),
+        fetchAll(`${API_BASE}/api/events/`),
       ]);
       setTickets(Array.isArray(ts) ? ts : []);
       setOrders(Array.isArray(os) ? os : []);
       setCustomers(Array.isArray(cs) ? cs : []);
+      setEvents(Array.isArray(es) ? es : []);
     } catch (e) {
       setError(e.message || "Unable to load data");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const exportTicketsCsv = async () => {
+    setExporting(true);
+    setError("");
+    try {
+      const res = await fetch(`${API_BASE}/api/tickets/export_csv/`, {
+        method: "GET",
+        headers: {
+          ...authHeaders(),
+        },
+        credentials: "omit",
+      });
+
+      if (!res.ok) throw new Error(`Failed to export CSV (${res.status})`);
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+
+      const disposition = res.headers?.get?.("content-disposition") || "";
+      const match = disposition.match(/filename\*=UTF-8''([^;]+)|filename=([^;]+)/i);
+      const rawName = (match?.[1] || match?.[2] || "").trim();
+      const fileName = rawName
+        ? decodeURIComponent(rawName.replace(/^"|"$/g, ""))
+        : `tickets_export_${new Date().toISOString().replace(/[:.]/g, "-")}.csv`;
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      setError(e.message || "Unable to export CSV");
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -94,6 +138,40 @@ function AllTickets() {
       return { ...t, _order_id: oid, _customer_email: email };
     });
   }, [tickets, orderToCustomer, customerToEmail]);
+
+  const eventNameById = useMemo(() => {
+    const map = {};
+    for (const e of events) {
+      const eid = toId(e?.id);
+      if (eid != null) map[eid] = e?.event_name || null;
+    }
+    return map;
+  }, [events]);
+
+  const selectedEventName = useMemo(() => {
+    const eid = toId(selectedTicket?.event);
+    if (eid == null) return "—";
+    return eventNameById[eid] || `Event #${eid}`;
+  }, [selectedTicket, eventNameById]);
+
+  const columnCount = useMemo(() => {
+    switch (filter) {
+      case "paid":
+        // Order ID, Email, Passport, Facebook, Member, Status, Details, Customer Payment, Payment Date
+        return 9;
+      case "complete":
+        // Order ID, Email, Passport, Facebook, Member, Status, Details, Selling Price, Zone, Row, Seat
+        return 11;
+      case "cancel":
+        // Order ID, Email, Passport, Facebook, Member, Customer Payment, Status, Details
+        return 8;
+      case "pending":
+      case "all":
+      default:
+        // Order ID, Email, Passport, Facebook, Member, Status, Details
+        return 7;
+    }
+  }, [filter]);
 
   const byFilter = useMemo(() => {
     if (filter === "all") return enhancedTickets;
@@ -170,17 +248,26 @@ function AllTickets() {
           ))}
         </div>
 
-        <button
-  onClick={loadAll}
-  disabled={loading}
-  className="flex items-center gap-2 px-4 py-2 rounded-md border border-gray-300 text-sm bg-white hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
->
-  <FiRefreshCw
-    size={16}
-    className={loading ? "animate-spin" : ""}
-  />
-  {loading ? "Refreshing…" : "Refresh"}
-</button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={exportTicketsCsv}
+            disabled={exporting || loading}
+            className="flex items-center gap-2 px-4 py-2 rounded-md border border-gray-300 text-sm bg-white hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Export all tickets to CSV"
+          >
+            <FiDownload size={16} />
+            {exporting ? "Exporting…" : "Export"}
+          </button>
+
+          <button
+            onClick={loadAll}
+            disabled={loading}
+            className="flex items-center gap-2 px-4 py-2 rounded-md border border-gray-300 text-sm bg-white hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <FiRefreshCw size={16} className={loading ? "animate-spin" : ""} />
+            {loading ? "Refreshing…" : "Refresh"}
+          </button>
+        </div>
 
       </div>
 
@@ -214,6 +301,9 @@ function AllTickets() {
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
                   Status
                 </th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                  Details
+                </th>
               </tr>
             )}
 
@@ -237,6 +327,9 @@ function AllTickets() {
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
                   Status
                 </th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                  Details
+                </th>
               </tr>
             )}
             {filter === "paid" && (
@@ -258,6 +351,9 @@ function AllTickets() {
                 </th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
                   Status
+                </th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                  Details
                 </th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
                   Customer Payment
@@ -286,6 +382,9 @@ function AllTickets() {
                 </th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
                   Status
+                </th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                  Details
                 </th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
                   Selling Price
@@ -323,6 +422,9 @@ function AllTickets() {
                 </th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
                   Status
+                </th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                  Details
                 </th>
               </tr>
             )}
@@ -365,6 +467,15 @@ function AllTickets() {
                           : ""}
                       </span>
                     </td>
+                    <td className="px-6 py-4 text-sm">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedTicket(t)}
+                        className="px-3 py-1.5 rounded-md border border-gray-300 bg-white text-gray-800 text-sm hover:bg-gray-50"
+                      >
+                        View details
+                      </button>
+                    </td>
                   </>
                 )}
 
@@ -396,6 +507,15 @@ function AllTickets() {
                           "—"}
                       </span>
                     </td>
+                    <td className="px-6 py-4 text-sm">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedTicket(t)}
+                        className="px-3 py-1.5 rounded-md border border-gray-300 bg-white text-gray-800 text-sm hover:bg-gray-50"
+                      >
+                        View details
+                      </button>
+                    </td>
                   </>
                 )}
                 {filter === "paid" && (
@@ -425,6 +545,15 @@ function AllTickets() {
                           t.status ||
                           "—"}
                       </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedTicket(t)}
+                        className="px-3 py-1.5 rounded-md border border-gray-300 bg-white text-gray-800 text-sm hover:bg-gray-50"
+                      >
+                        View details
+                      </button>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-900">
                       {t.customer_payment ?? "—"}
@@ -461,6 +590,15 @@ function AllTickets() {
                           t.status ||
                           "—"}
                       </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedTicket(t)}
+                        className="px-3 py-1.5 rounded-md border border-gray-300 bg-white text-gray-800 text-sm hover:bg-gray-50"
+                      >
+                        View details
+                      </button>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-900">
                       {t.selling_price ?? "—"}
@@ -514,6 +652,15 @@ function AllTickets() {
                           : ""}
                       </span>
                     </td>
+                    <td className="px-6 py-4 text-sm">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedTicket(t)}
+                        className="px-3 py-1.5 rounded-md border border-gray-300 bg-white text-gray-800 text-sm hover:bg-gray-50"
+                      >
+                        View details
+                      </button>
+                    </td>
                   </>
                 )}
               </tr>
@@ -522,7 +669,7 @@ function AllTickets() {
               <tr>
                 <td
                   className="px-6 py-8 text-center text-gray-500 text-sm"
-                  colSpan={10}
+                  colSpan={columnCount}
                 >
                   No tickets in this status.
                 </td>
@@ -531,6 +678,152 @@ function AllTickets() {
           </tbody>
         </table>
       </div>
+
+      {selectedTicket && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setSelectedTicket(null)}
+          />
+
+          <div className="relative w-full max-w-3xl bg-white rounded-xl shadow-xl border border-gray-200">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">
+                  Order details
+                </h2>
+                <p className="text-sm text-gray-500">Order ID: {selectedTicket._order_id ?? "—"}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedTicket(null)}
+                className="p-2 rounded-md hover:bg-gray-100 text-gray-600"
+                aria-label="Close"
+              >
+                <FiX size={18} />
+              </button>
+            </div>
+
+            <div className="px-5 py-4 max-h-[75vh] overflow-y-auto">
+              <div className="rounded-lg border border-gray-200 p-4">
+                <h3 className="text-sm font-semibold text-gray-900 mb-3">
+                  Ticket details
+                </h3>
+
+                <div className="space-y-4">
+                  <div>
+                    <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                      Order ID
+                    </div>
+                    <div className="text-lg sm:text-xl font-bold text-gray-900">
+                      {selectedTicket._order_id ?? "—"}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                      Event
+                    </div>
+                    <div className="text-base sm:text-lg font-semibold text-gray-900">
+                      {selectedEventName}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                      Name
+                    </div>
+                    <div className="text-base sm:text-lg font-semibold text-gray-900">
+                      {selectedTicket.passport_name ?? "—"}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                      Facebook Name
+                    </div>
+                    <div className="text-base sm:text-lg font-semibold text-gray-900">
+                      {selectedTicket.facebook_name ?? "—"}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                      Member Code
+                    </div>
+                    <div className="text-base sm:text-lg font-semibold text-gray-900">
+                      {selectedTicket.member_code ?? "—"}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                      Status
+                    </div>
+                    <div className="mt-1">
+                      <span
+                        className={`inline-flex items-center px-3 py-1.5 rounded-md text-sm font-semibold ${statusBadgeClass(
+                          selectedTicket.status
+                        )}`}
+                      >
+                        {STATUS_LABELS[(selectedTicket.status || "").toLowerCase()] ||
+                          selectedTicket.status ||
+                          "—"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">
+                      Price (all priorities)
+                    </div>
+                    <div className="space-y-3">
+                      <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                        <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                          1st priority
+                        </div>
+                        <div className="text-lg font-bold text-gray-900">
+                          {selectedTicket.fst_pt ?? "—"}
+                        </div>
+                      </div>
+                      <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                        <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                          2nd priority
+                        </div>
+                        <div className="text-lg font-bold text-gray-900">
+                          {selectedTicket.snd_pt ?? "—"}
+                        </div>
+                      </div>
+                      <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                        <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                          3rd priority
+                        </div>
+                        <div className="text-lg font-bold text-gray-900">
+                          {selectedTicket.trd_pt ?? selectedTicket.thrd_pt ?? "—"}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 px-5 py-4 border-t border-gray-200">
+              <button
+                type="button"
+                onClick={() => setSelectedTicket(null)}
+                className="px-4 py-2 rounded-md border border-gray-300 bg-white text-gray-800 hover:bg-gray-50"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
