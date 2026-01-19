@@ -26,11 +26,11 @@ function AdminBanner() {
           id: b.id,
           image:
             b.banner_image && b.banner_image.length > 0
-              ? b.banner_image[0]
+              ? b.banner_image_url
               : "https://via.placeholder.com/1200x400",
           description: b.banner_name || "Event Banner",
         }));
-        console.log("Banner images:", bannerData.map((b) => b.image));
+        console.log("Banner images:", bannerData.map((b) => b.banner_image_url));
         setBanner(bannerData);
       } catch (error) {
         console.error("Error fetching banners:", error);

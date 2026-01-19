@@ -58,16 +58,20 @@ function CategoriesManagement() {
     if (!getToken()) return setError("Please login as admin to create categories");
 
     try {
-      setIsCreating(true);
-      let payload = { category_name: newCategoryName };
-
+      setIsCreating(true);     
+      // Use FormData with actual file (like events and banners)
+      const formData = new FormData();
+      formData.append('category_name', newCategoryName);
+      
       if (newCategoryImage) {
-        const base64Image = await toBase64(newCategoryImage);
-        payload.category_image = base64Image;
+        formData.append('category_image', newCategoryImage);
       }
 
-      await axios.post(`${API_BASE}/api/categories/`, payload, {
-        headers: authHeaders(),
+      await axios.post(`${API_BASE}/api/categories/`, formData, {
+        headers: {
+          ...authHeaders(),
+          // Don't set Content-Type, let browser handle multipart/form-data
+        },
       });
 
       setNewCategoryName("");
@@ -218,11 +222,14 @@ function CategoriesManagement() {
                   key={category.id}
                   className="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden"
                 >
-                  {category.category_image && (
+                  {category.category_image_url && (
                     <img
-                      src={category.category_image}
+                      src={category.category_image_url}
                       alt={category.category_name}
                       className="h-30 w-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.src = "https://placehold.co/300x120/e2e8f0/666?text=" + encodeURIComponent(category.category_name || "Category");
+                      }}
                     />
                   )}
                   <div className="p-4 flex justify-between items-center">

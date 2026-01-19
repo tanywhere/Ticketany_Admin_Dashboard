@@ -16,6 +16,7 @@ function EditEvent() {
     const token = getToken();
     const h = {};
     if (token) h.Authorization = `Bearer ${token}`;
+    // Only set Content-Type for JSON, let browser handle FormData
     if (json) h["Content-Type"] = "application/json";
     return h;
   };
@@ -101,7 +102,12 @@ function EditEvent() {
         category: data.category || "",
       });
 
-      if (data.event_image) {
+      // Use the new images array structure with image_url
+      if (data.images?.length > 0) {
+        const imageUrls = data.images.map(img => img.image_url).filter(Boolean);
+        setExistingImages(imageUrls);
+      } else if (data.event_image) {
+        // Fallback for old event_image format
         const arr = data.event_image.includes(IMAGE_SEPARATOR)
           ? data.event_image.split(IMAGE_SEPARATOR)
           : [data.event_image];
@@ -230,42 +236,61 @@ function EditEvent() {
     }
 
     try {
-      // Compress new files in current visual order
-      const combined = posters;
-      const compressedNew = [];
-      for (const it of combined) {
-        if (it.kind === "new" && it.file) {
-          const base64 = await compressImage(it.file);
-          compressedNew.push(base64);
-        }
+      // Create FormData object
+      const formDataToSend = new FormData();
+      
+      // Add text fields with proper JSON handling for JSONField
+      formDataToSend.append('event_name', formData.event_name);
+      formDataToSend.append('event_location', formData.event_location || '');
+      formDataToSend.append('event_time', formData.event_time || '');
+      
+      // Handle JSONField types - Django expects JSON strings
+      if (formData.event_date !== null && formData.event_date !== undefined && formData.event_date !== '') {
+        formDataToSend.append('event_date', JSON.stringify(formData.event_date));
+      } else {
+        formDataToSend.append('event_date', JSON.stringify(null));
       }
-
-      // Build final images in current order
-      const finalImages = combined.map((it) =>
-        it.kind === "existing" ? it.url : null
-      );
-      // Replace nulls (for new) with compressedNew in order encountered
-      let ni = 0;
-      for (let i = 0; i < finalImages.length; i++) {
-        if (finalImages[i] === null) {
-          finalImages[i] = compressedNew[ni++];
+      
+      formDataToSend.append('sale_date', formData.sale_date || '');
+      
+      if (formData.ticket_price !== null && formData.ticket_price !== undefined && formData.ticket_price !== '') {
+        // ticket_price can be a JSON object/array or a number
+        let priceData;
+        if (typeof formData.ticket_price === 'string') {
+          try {
+            // Try to parse as JSON first
+            priceData = JSON.parse(formData.ticket_price);
+          } catch {
+            // If not valid JSON, treat as single number
+            const numPrice = parseFloat(formData.ticket_price);
+            priceData = isNaN(numPrice) ? null : numPrice;
+          }
+        } else {
+          priceData = formData.ticket_price;
         }
+        
+        formDataToSend.append('ticket_price', JSON.stringify(priceData));
+      } else {
+        formDataToSend.append('ticket_price', JSON.stringify(null));
       }
+      
+      formDataToSend.append('category', formData.category || '');
 
-      const payload = {
-        ...formData,
-        ticket_price: formData.ticket_price
-          ? String(formData.ticket_price)
-          : null,
-        event_image: finalImages.length
-          ? finalImages.join(IMAGE_SEPARATOR)
-          : null,
-      };
+      // Add new image files directly to FormData
+      newFiles.forEach(fileObj => {
+        if (fileObj.file) {
+          formDataToSend.append('images', fileObj.file);
+        }
+      });
+      // Add existing image URLs to inform backend which to keep
+      existingImages.forEach((imageUrl, index) => {
+        formDataToSend.append(`existing_images[${index}]`, imageUrl);
+      });
 
       const res = await fetch(`${API_BASE}/api/events/${id}/`, {
         method: "PUT",
-        headers: authHeaders(true),
-        body: JSON.stringify(payload),
+        headers: authHeaders(), // Don't set Content-Type for FormData
+        body: formDataToSend,
       });
 
       if (res.status === 401 || res.status === 403) {
@@ -315,7 +340,7 @@ function EditEvent() {
         const data = await res.json().catch(() => ({}));
         setStatus(`❌ Failed to delete: ${JSON.stringify(data)}`);
       } else {
-        navigate("/admin/events/all", { replace: true });
+        navigate("/admin/eventupload", { replace: true });
       }
     } catch (e) {
       setStatus("❌ Network error: " + e.message);
@@ -356,16 +381,29 @@ function EditEvent() {
           </div>
         ) : (
           <div className="flex items-center gap-2">
-            <input
-              autoFocus
-              type={name === "ticket_price" ? "text" : "text"}
-              value={formData[name] ?? ""}
-              placeholder={placeholder}
-              onChange={(e) => handleInput(name, e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && toggleEdit(name)}
-              onBlur={() => toggleEdit(name)}
-              className="w-full h-10 rounded-md border border-gray-300 px-3 focus:outline-none focus:ring-2 focus:ring-[#f28fa5]"
-            />
+            {name === "ticket_price" ? (
+              <textarea
+                autoFocus
+                value={formData[name] ?? ""}
+                placeholder={placeholder}
+                onChange={(e) => handleInput(name, e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && toggleEdit(name)}
+                onBlur={() => toggleEdit(name)}
+                className="w-full h-20 rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#f28fa5] resize-none"
+                rows={3}
+              />
+            ) : (
+              <input
+                autoFocus
+                type={name === "ticket_price" ? "text" : "text"}
+                value={formData[name] ?? ""}
+                placeholder={placeholder}
+                onChange={(e) => handleInput(name, e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && toggleEdit(name)}
+                onBlur={() => toggleEdit(name)}
+                className="w-full h-10 rounded-md border border-gray-300 px-3 focus:outline-none focus:ring-2 focus:ring-[#f28fa5]"
+              />
+            )}
           </div>
         )}
       </div>
@@ -537,9 +575,9 @@ function EditEvent() {
                 placeholder="1 July 2025 - 2 Sep 2025"
               />
               <InlineRow
-                label="Price"
+                label="Price (JSON)"
                 name="ticket_price"
-                placeholder="1799 THB, 2599 THB, ..."
+                placeholder='{"vip": 100, "regular": 50, "student": 25} or [100, 50, 25]'
               />
 
               {/* Category Select */}

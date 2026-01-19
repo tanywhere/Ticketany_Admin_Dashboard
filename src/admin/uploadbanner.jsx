@@ -59,14 +59,21 @@ function UploadBanner() {
 
     try {
       setIsUploading(true);
-      const base64 = await toBase64(selectedImage);
+      
+      // Use FormData with actual file (like events)
+      const formData = new FormData();
+      formData.append('banner_name', title);
+      formData.append('banner_image', selectedImage);
+      
       await axios.post(
         `${API_BASE}/api/banners/`,
-        {
-          banner_name: title,
-          banner_image: [base64],
-        },
-        { headers: authHeaders() }
+        formData,
+        { 
+          headers: {
+            ...authHeaders(),
+            // Don't set Content-Type, let browser handle multipart/form-data
+          }
+        }
       );
 
       setTitle("");
@@ -74,8 +81,9 @@ function UploadBanner() {
       setPreviewUrl(null);
       setError("");
       fetchBanners();
-    } catch {
-      setError("Failed to upload banner");
+    } catch (err) {
+      console.error('Banner upload error:', err);
+      setError("Failed to upload banner: " + (err.response?.data?.detail || err.message));
     } finally {
       setIsUploading(false);
     }
@@ -214,9 +222,12 @@ function UploadBanner() {
                   className="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden"
                 >
                   <img
-                    src={banner.banner_image[0]}
+                    src={banner.banner_image_url || "https://placehold.co/300x200/e2e8f0/666?text=Banner"}
                     alt={banner.banner_name}
                     className="h-48 w-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.src = "https://placehold.co/300x200/e2e8f0/666?text=" + encodeURIComponent(banner.banner_name || "Banner");
+                    }}
                   />
                   <div className="p-4 flex justify-between items-center">
                     <h3 className="font-semibold text-gray-800 truncate">

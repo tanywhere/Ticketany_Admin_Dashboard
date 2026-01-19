@@ -29,7 +29,6 @@ function eventupload() {
   // Configuration constants
   const MAX_FILES = 10;
   const MAX_SIZE_MB = 5;
-  const IMAGE_SEPARATOR = "|||SEPARATOR|||";
   const API_BASE = "http://127.0.0.1:8000";
 
   const navigate = useNavigate();
@@ -45,6 +44,7 @@ function eventupload() {
     const token = getToken();
     const h = {};
     if (token) h.Authorization = `Bearer ${token}`;
+    // Only set Content-Type for JSON requests, let browser handle FormData
     if (json) h["Content-Type"] = "application/json";
     return h;
   };
@@ -291,52 +291,108 @@ function eventupload() {
 
   // Main upload function
   const uploadEvent = async () => {
-    if (!formData.event_name.trim()) {
-      setUploadStatus("Please enter an event name");
+    // Inline validation
+    const errors = [];
+    
+    // Required field validation
+    if (!formData.event_name?.trim()) {
+      errors.push('Event name is required');
+    }
+    if (!formData.event_location?.trim()) {
+      errors.push('Event location is required');
+    }
+    if (!formData.event_date) {
+      errors.push('Event date is required');
+    }
+    if (!formData.event_time) {
+      errors.push('Event time is required');
+    }
+    if (!formData.category) {
+      errors.push('Category is required');
+    }
+    if (selectedFiles.length === 0) {
+      errors.push('At least one image is required');
+    }
+    if (selectedFiles.length > MAX_FILES) {
+      errors.push(`Maximum ${MAX_FILES} images allowed`);
+    }
+    
+    if (errors.length > 0) {
+      setUploadStatus('❌ Validation errors:\n' + errors.join('\n'));
       return;
     }
 
     setLoading(true);
-    setUploadStatus("Processing images...");
+    setUploadStatus("Uploading event...");
 
     try {
-      // Compress all selected images to base64
-      const compressedImages = [];
-      for (let i = 0; i < selectedFiles.length; i++) {
-        const file = selectedFiles[i];
-        setUploadStatus(
-          `Processing image ${i + 1} of ${selectedFiles.length}...`
-        );
-        const compressedBase64 = await compressImage(file);
-        compressedImages.push(compressedBase64);
+      // Create FormData with proper backend format
+      const formDataToSend = new FormData();
+      
+      // Add text fields exactly as Django expects
+      formDataToSend.append('event_name', formData.event_name);
+      formDataToSend.append('event_location', formData.event_location || '');
+      formDataToSend.append('event_time', formData.event_time || '');
+      
+      // IMPORTANT: Handle JSONField types - Django expects JSON strings for these
+      // Convert to proper JSON format
+      if (formData.event_date && formData.event_date.trim()) {
+        // For event_date, send as a JSON string (single date)
+        formDataToSend.append('event_date', JSON.stringify(formData.event_date.trim()));
+        console.log('Sending event_date as:', JSON.stringify(formData.event_date.trim()));
+      } else {
+        // Send null for empty event_date
+        formDataToSend.append('event_date', JSON.stringify(null));
+      }
+      
+      if (formData.ticket_price && formData.ticket_price.trim()) {
+        const price = parseFloat(formData.ticket_price.trim());
+        if (!isNaN(price)) {
+          // For ticket_price, send as a JSON number
+          formDataToSend.append('ticket_price', JSON.stringify(price));
+          console.log('Sending ticket_price as:', JSON.stringify(price));
+        } else {
+          // Invalid price, send null
+          formDataToSend.append('ticket_price', JSON.stringify(null));
+        }
+      } else {
+        // Send null for empty ticket_price
+        formDataToSend.append('ticket_price', JSON.stringify(null));
+      }
+      
+      if (formData.sale_date) {
+        formDataToSend.append('sale_date', formData.sale_date);
+      }
+      
+      // IMPORTANT: Category as integer (foreign key)
+      if (formData.category) {
+        const categoryId = parseInt(formData.category, 10);
+        formDataToSend.append('category', categoryId);
+        console.log('Sending category as:', categoryId);
       }
 
-      // Prepare payload for backend
-      const payload = {
-        event_name: formData.event_name,
-        event_location: toNullIfEmpty(formData.event_location),
-        event_time: toNullIfEmpty(formData.event_time),
-        event_date: toNullIfEmpty(formData.event_date),
-        sale_date: toNullIfEmpty(formData.sale_date),
-        ticket_price: toNullIfEmpty(formData.ticket_price),
-        category: formData.category ? parseInt(formData.category, 10) : null,
-        // Store multiple images as comma-separated string
-        event_image:
-          compressedImages.length > 0
-            ? compressedImages.join(IMAGE_SEPARATOR)
-            : null,
-      };
+      // Add image files (this part was correct)
+      selectedFiles.forEach((file, index) => {
+        formDataToSend.append('images', file);
+        console.log(`Adding image ${index}:`, file.name, file.type);
+      });
+      
+      // Debug: show all FormData entries
+      console.log('=== Complete FormData being sent ===');
+      for (let pair of formDataToSend.entries()) {
+        console.log(`${pair[0]}:`, pair[1]);
+      }
 
-      await sendEventData(payload);
+      await sendEventData(formDataToSend);
     } catch (error) {
       console.error("Error processing upload:", error);
-      setUploadStatus("❌ Error processing images: " + error.message);
+      setUploadStatus("❌ Error uploading event: " + error.message);
       setLoading(false);
     }
   };
 
   // Send event data to backend
-  const sendEventData = async (payload) => {
+  const sendEventData = async (formDataToSend) => {
     try {
       setUploadStatus("Uploading to server...");
 
@@ -349,10 +405,8 @@ function eventupload() {
 
       const response = await fetch(`${API_BASE}/api/events/`, {
         method: "POST",
-        headers: {
-          ...authHeaders(true),
-        },
-        body: JSON.stringify(payload),
+        headers: authHeaders(), // Don't set Content-Type for FormData
+        body: formDataToSend, // Send FormData directly
       });
 
       if (response.status === 401 || response.status === 403) {
@@ -369,7 +423,7 @@ function eventupload() {
 
       if (response.ok) {
         setUploadStatus(
-          `✅ Event "${payload.event_name}" created successfully!`
+          `✅ Event "${formDataToSend.get('event_name')}" created successfully!`
         );
 
         // Reset form
@@ -386,17 +440,32 @@ function eventupload() {
         setPreviews([]);
 
         // Clear file input
-        const fileInput = document.getElementById("image-input");
-        if (fileInput) fileInput.value = "";
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
 
         // Refresh events list
         fetchEvents();
       } else {
-        const errorMsg =
-          typeof responseData === "string"
-            ? responseData
-            : JSON.stringify(responseData);
-        setUploadStatus(`❌ Failed to create event: ${errorMsg}`);
+        // Handle error responses with better error parsing
+        let errorMsg = 'Failed to create event';
+        
+        if (typeof responseData === 'object' && responseData) {
+          // Handle validation errors from Django
+          const errors = [];
+          Object.entries(responseData).forEach(([key, value]) => {
+            if (Array.isArray(value)) {
+              errors.push(`${key}: ${value.join(', ')}`);
+            } else {
+              errors.push(`${key}: ${value}`);
+            }
+          });
+          errorMsg = errors.length > 0 ? errors.join('\\n') : JSON.stringify(responseData);
+        } else if (typeof responseData === 'string') {
+          errorMsg = responseData;
+        }
+        
+        setUploadStatus(`❌ ${errorMsg}`);
       }
     } catch (error) {
       console.error("Network error:", error);
@@ -453,6 +522,12 @@ function eventupload() {
 
   // Helper to get cover image
   const getCoverImageForDisplay = (event) => {
+    // Use the new images array structure with image_url
+    if (event?.images?.length > 0) {
+      return event.images[0].image_url; // Use image_url from EventImageSerializer
+    }
+    
+    // Fallback for old event_image format
     if (event.event_image && typeof event.event_image === "string") {
       if (event.event_image.includes(IMAGE_SEPARATOR)) {
         const images = event.event_image.split(IMAGE_SEPARATOR);
@@ -629,16 +704,16 @@ function eventupload() {
                   />
                 </div>
 
-                {/* Price */}
+                {/* Price */}  
                 <div className="flex items-center gap-4">
-                  <label className="w-32 text-gray-700">Price</label>
-                  <input
-                    type="text"
+                  <label className="w-32 text-gray-700">Price (JSON)</label>
+                  <textarea
                     name="ticket_price"
                     value={formData.ticket_price}
                     onChange={handleInputChange}
-                    placeholder="e.g., Premium - 1000, Regular - 500"
-                    className="flex-1 h-10 rounded-md border border-gray-300 px-3 focus:outline-none focus:ring-2 focus:ring-[#f28fa5]"
+                    placeholder='e.g., {"vip": 100, "regular": 50, "student": 25} or [100, 50, 25]'
+                    className="flex-1 h-20 rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#f28fa5] resize-none"
+                    rows={3}
                   />
                 </div>
 
@@ -722,9 +797,12 @@ function eventupload() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
                   {categoryEvents.map((event) => {
                     const coverImage = getCoverImageForDisplay(event);
-                    const imageCount = event.event_image
-                      ? event.event_image.split(IMAGE_SEPARATOR).length
-                      : 0;
+                    // Use new images array for count, fallback to old format
+                    const imageCount = event?.images?.length > 0 
+                      ? event.images.length
+                      : (event.event_image
+                        ? event.event_image.split(IMAGE_SEPARATOR).length
+                        : 0);
 
                     return (
                       <button
