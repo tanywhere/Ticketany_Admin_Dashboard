@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import AllTickets from "./AllTickets";
 import { useRef } from "react";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') || "http://127.0.0.1:8000/api";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api';
 
 function adminHome() {
   const [activeTab, setActiveTab] = useState("tickets");
@@ -42,10 +42,10 @@ function adminHome() {
     setError("");
     try {
       const [cs, es, ts, os] = await Promise.all([
-        fetchAll(`${API_BASE}/api/customers/`),
-        fetchAll(`${API_BASE}/api/events/`),
-        fetchAll(`${API_BASE}/api/tickets/`),
-        fetchAll(`${API_BASE}/api/orders/`),
+        fetchAll(`${API_BASE}/customers/`),
+        fetchAll(`${API_BASE}/events/`),
+        fetchAll(`${API_BASE}/tickets/`),
+        fetchAll(`${API_BASE}/orders/`),
       ]);
       setCustomers(Array.isArray(cs) ? cs : []);
       setEvents(Array.isArray(es) ? es : []);

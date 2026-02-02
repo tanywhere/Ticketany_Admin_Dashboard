@@ -37,7 +37,7 @@ function adminProfile() {
       });
   }, [activeTab]);
 
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') || "http://127.0.0.1:8000/api";
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api';
 
   const normalizeId = (value) => {
     if (value == null) return null;
@@ -93,9 +93,9 @@ function adminProfile() {
       setError("");
       try {
         const [ordersRes, ticketsRes, eventsRes] = await Promise.all([
-          fetch(`${API_BASE_URL}/api/orders/`, { headers }),
-          fetch(`${API_BASE_URL}/api/tickets/`, { headers }),
-          fetch(`${API_BASE_URL}/api/events/`, { headers }),
+          fetch(`${API_BASE_URL}/orders/`, { headers }),
+          fetch(`${API_BASE_URL}/tickets/`, { headers }),
+          fetch(`${API_BASE_URL}/events/`, { headers }),
         ]);
 
         const [ordersRaw, ticketsRaw, eventsRaw] = await Promise.all([
@@ -139,7 +139,7 @@ function adminProfile() {
     // Fetch customers list for emails and base roster
     (async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/api/customers/`, { headers });
+        const res = await fetch(`${API_BASE_URL}/customers/`, { headers });
         if (!res.ok) return;
         const data = await res.json();
         setUsers(Array.isArray(data) ? data : toArray(data));
@@ -210,7 +210,7 @@ function adminProfile() {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       };
 
-      const res = await fetch(`${API_BASE_URL}/api/orders/${id}/`, {
+      const res = await fetch(`${API_BASE_URL}/orders/${id}/`, {
         method: "DELETE",
         headers,
       });
@@ -248,7 +248,7 @@ function adminProfile() {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       };
 
-      const res = await fetch(`${API_BASE_URL}/api/customers/${id}/`, {
+      const res = await fetch(`${API_BASE_URL}/customers/${id}/`, {
         method: "DELETE",
         headers,
       });

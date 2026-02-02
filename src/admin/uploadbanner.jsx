@@ -3,7 +3,7 @@ import axios from "axios";
 import { LuTrash2 } from "react-icons/lu";
 
 function UploadBanner() {
-  const API_BASE = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') || "http://127.0.0.1:8000/api";
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api';
 
   const getToken = () =>
     localStorage.getItem("access_token") ||
@@ -26,7 +26,7 @@ function UploadBanner() {
 
   const fetchBanners = async () => {
     try {
-      const res = await axios.get(`${API_BASE}/api/banners/`, {
+      const res = await axios.get(`${API_BASE}/banners/`, {
         headers: authHeaders(),
       });
       const sorted = res.data.sort((a, b) => a.order - b.order);
@@ -66,7 +66,7 @@ function UploadBanner() {
       formData.append('banner_image', selectedImage);
       
       await axios.post(
-        `${API_BASE}/api/banners/`,
+        `${API_BASE}/banners/`,
         formData,
         { 
           headers: {
@@ -93,7 +93,7 @@ function UploadBanner() {
     if (!window.confirm("Delete this banner?")) return;
     if (!getToken()) return setError("Please login as admin to delete banners");
     try {
-      await axios.delete(`${API_BASE}/api/banners/${id}/`, {
+      await axios.delete(`${API_BASE}/banners/${id}/`, {
         headers: authHeaders(),
       });
       fetchBanners();
