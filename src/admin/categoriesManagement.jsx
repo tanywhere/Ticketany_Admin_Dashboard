@@ -3,7 +3,7 @@ import axios from "axios";
 import { LuTrash2 } from "react-icons/lu";
 
 function CategoriesManagement() {
-  const API_BASE = "http://127.0.0.1:8000";
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api';
 
   const getToken = () =>
     localStorage.getItem("access_token") ||
@@ -25,7 +25,7 @@ function CategoriesManagement() {
 
   const fetchCategories = async () => {
     try {
-      const res = await axios.get(`${API_BASE}/api/categories/`, {
+      const res = await axios.get(`${API_BASE}/categories/`, {
         headers: authHeaders(),
       });
       setCategories(res.data);
@@ -67,7 +67,7 @@ function CategoriesManagement() {
         formData.append('category_image', newCategoryImage);
       }
 
-      await axios.post(`${API_BASE}/api/categories/`, formData, {
+      await axios.post(`${API_BASE}/categories/`, formData, {
         headers: {
           ...authHeaders(),
           // Don't set Content-Type, let browser handle multipart/form-data
@@ -91,7 +91,7 @@ function CategoriesManagement() {
     if (!window.confirm("Delete this category?")) return;
     if (!getToken()) return setError("Please login as admin to delete categories");
     try {
-      await axios.delete(`${API_BASE}/api/categories/${id}/`, {
+      await axios.delete(`${API_BASE}/categories/${id}/`, {
         headers: authHeaders(),
       });
       fetchCategories();

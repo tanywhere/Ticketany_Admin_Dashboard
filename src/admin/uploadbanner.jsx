@@ -3,7 +3,7 @@ import axios from "axios";
 import { LuTrash2 } from "react-icons/lu";
 
 function UploadBanner() {
-  const API_BASE = "http://127.0.0.1:8000";
+  const API_BASE = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') || "http://127.0.0.1:8000/api";
 
   const getToken = () =>
     localStorage.getItem("access_token") ||

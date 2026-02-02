@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { FiRefreshCw } from "react-icons/fi";
 
-const API_BASE = "http://127.0.0.1:8000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api';
 
 function StatusChange() {
   useEffect(() => {
@@ -83,7 +83,7 @@ function StatusChange() {
     setLoading(true);
     setError("");
     try {
-      const list = await fetchAll(`${API_BASE}/api/tickets/`);
+      const list = await fetchAll(`${API_BASE}/tickets/`);
       setTickets(list);
     } catch (e) {
       setError(e.message || "Failed to load tickets");
@@ -93,7 +93,7 @@ function StatusChange() {
   };
 
   const patchTicket = async (id, payload) => {
-    const res = await fetch(`${API_BASE}/api/tickets/${id}/`, {
+    const res = await fetch(`${API_BASE}/tickets/${id}/`, {
       method: "PATCH",
       headers: authHeaders(true),
       body: JSON.stringify(payload),

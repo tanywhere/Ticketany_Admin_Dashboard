@@ -9,7 +9,8 @@ const AuthContextProvider = ({ children}) => {
 
     let getUser = async (token) => {
         try {
-            let res = await axios.get('http://127.0.0.1:8000/api/user/profile/', {
+            const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api';
+            let res = await axios.get(`${API_BASE}user/profile/`, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
@@ -36,7 +37,8 @@ const AuthContextProvider = ({ children}) => {
     let login = async (credentials) => {
         setLoading(true);
         try {
-            const response = await axios.post('http://127.0.0.1:8000/api/auth/login/', {
+            const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api';
+            const response = await axios.post(`${API_BASE}auth/login/`, {
                 email: credentials.email,
                 password: credentials.password
             });

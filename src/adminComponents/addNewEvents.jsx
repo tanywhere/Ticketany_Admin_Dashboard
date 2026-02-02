@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
 function AddNewEvents() {
-  const API_BASE = "http://127.0.0.1:8000";
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api';
 
   const getToken = () =>
     localStorage.getItem("access_token") ||
@@ -50,7 +50,7 @@ function AddNewEvents() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await fetch(`${API_BASE}/api/categories/`, {
+        const res = await fetch(`${API_BASE}/categories/`, {
           headers: authHeaders(),
         });
         if (!res.ok) throw new Error("Failed to fetch categories");
@@ -232,7 +232,7 @@ function AddNewEvents() {
         return;
       }
 
-      const res = await fetch(`${API_BASE}/api/events/`, {
+      const res = await fetch(`${API_BASE}/events/`, {
         method: "POST",
         headers: authHeaders(true),
         body: JSON.stringify(payload),
