@@ -50,7 +50,7 @@ function AddNewEvents() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await fetch(`${API_BASE}/categories/`, {
+        const res = await fetch(`${API_BASE}categories/`, {
           headers: authHeaders(),
         });
         if (!res.ok) throw new Error("Failed to fetch categories");
@@ -232,7 +232,7 @@ function AddNewEvents() {
         return;
       }
 
-      const res = await fetch(`${API_BASE}/events/`, {
+      const res = await fetch(`${API_BASE}events/`, {
         method: "POST",
         headers: authHeaders(true),
         body: JSON.stringify(payload),

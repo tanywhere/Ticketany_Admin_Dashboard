@@ -5,7 +5,7 @@ function EditEvent() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api';
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api/';
 
   const getToken = () =>
     localStorage.getItem("access_token") ||
@@ -68,7 +68,7 @@ function EditEvent() {
 
   const fetchCategories = async () => {
     try {
-      const res = await fetch(`${API_BASE}/categories/`, {
+      const res = await fetch(`${API_BASE}categories/`, {
         headers: authHeaders(),
       });
       if (!res.ok) return;
@@ -81,7 +81,7 @@ function EditEvent() {
 
   const fetchEvent = async () => {
     try {
-      const res = await fetch(`${API_BASE}/events/${id}/`, {
+      const res = await fetch(`${API_BASE}events/${id}/`, {
         headers: authHeaders(),
       });
       if (res.status === 401 || res.status === 403) {
@@ -287,7 +287,7 @@ function EditEvent() {
         formDataToSend.append(`existing_images[${index}]`, imageUrl);
       });
 
-      const res = await fetch(`${API_BASE}/events/${id}/`, {
+      const res = await fetch(`${API_BASE}events/${id}/`, {
         method: "PUT",
         headers: authHeaders(), // Don't set Content-Type for FormData
         body: formDataToSend,
@@ -326,7 +326,7 @@ function EditEvent() {
     }
 
     try {
-      const res = await fetch(`${API_BASE}/events/${id}/`, {
+      const res = await fetch(`${API_BASE}events/${id}/`, {
         method: "DELETE",
         headers: authHeaders(),
       });

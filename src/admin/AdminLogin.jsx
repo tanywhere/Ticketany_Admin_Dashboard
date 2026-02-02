@@ -50,7 +50,7 @@ function AdminLogin() {
           token
         ) {
           try {
-            const meRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api'}auth/me/`, {
+            const meRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api/'}auth/me/`, {
               headers: {
                 'Accept': 'application/json',
                 'Authorization': `Bearer ${token}`,

@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { FiDownload, FiRefreshCw, FiX } from "react-icons/fi";
 
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api/';
 
 function AllTickets() {
   const [tickets, setTickets] = useState([]);
@@ -42,10 +42,10 @@ function AllTickets() {
     setError("");
     try {
       const [ts, os, cs, es] = await Promise.all([
-        fetchAll(`${API_BASE}/tickets/`),
-        fetchAll(`${API_BASE}/orders/`),
-        fetchAll(`${API_BASE}/customers/`),
-        fetchAll(`${API_BASE}/events/`),
+        fetchAll(`${API_BASE}tickets/`),
+        fetchAll(`${API_BASE}orders/`),
+        fetchAll(`${API_BASE}customers/`),
+        fetchAll(`${API_BASE}events/`),
       ]);
       setTickets(Array.isArray(ts) ? ts : []);
       setOrders(Array.isArray(os) ? os : []);
@@ -62,7 +62,7 @@ function AllTickets() {
     setExporting(true);
     setError("");
     try {
-      const res = await fetch(`${API_BASE}/tickets/export_csv/`, {
+      const res = await fetch(`${API_BASE}tickets/export_csv/`, {
         method: "GET",
         headers: {
           ...authHeaders(),

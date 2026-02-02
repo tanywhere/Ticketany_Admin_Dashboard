@@ -37,7 +37,7 @@ function adminProfile() {
       });
   }, [activeTab]);
 
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api';
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api/';
 
   const normalizeId = (value) => {
     if (value == null) return null;
@@ -93,9 +93,9 @@ function adminProfile() {
       setError("");
       try {
         const [ordersRes, ticketsRes, eventsRes] = await Promise.all([
-          fetch(`${API_BASE_URL}/orders/`, { headers }),
-          fetch(`${API_BASE_URL}/tickets/`, { headers }),
-          fetch(`${API_BASE_URL}/events/`, { headers }),
+          fetch(`${API_BASE_URL}orders/`, { headers }),
+          fetch(`${API_BASE_URL}tickets/`, { headers }),
+          fetch(`${API_BASE_URL}events/`, { headers }),
         ]);
 
         const [ordersRaw, ticketsRaw, eventsRaw] = await Promise.all([

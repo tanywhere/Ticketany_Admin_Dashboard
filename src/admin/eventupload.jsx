@@ -29,7 +29,7 @@ function eventupload() {
   // Configuration constants
   const MAX_FILES = 10;
   const MAX_SIZE_MB = 5;
-  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api';
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api/';
 
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
@@ -58,7 +58,7 @@ function eventupload() {
   // Fetch categories from backend API
   const fetchCategories = async () => {
     try {
-      const response = await fetch(`${API_BASE}/categories/`, {
+      const response = await fetch(`${API_BASE}categories/`, {
         headers: authHeaders(),
       });
       if (response.ok) {
@@ -80,7 +80,7 @@ function eventupload() {
   const fetchEvents = async () => {
     setFetchingEvents(true);
     try {
-      const response = await fetch(`${API_BASE}/events/`, {
+      const response = await fetch(`${API_BASE}events/`, {
         headers: authHeaders(),
       });
       if (response.ok) {
@@ -403,7 +403,7 @@ function eventupload() {
         return;
       }
 
-      const response = await fetch(`${API_BASE}/events/`, {
+      const response = await fetch(`${API_BASE}events/`, {
         method: "POST",
         headers: authHeaders(), // Don't set Content-Type for FormData
         body: formDataToSend, // Send FormData directly
@@ -490,7 +490,7 @@ function eventupload() {
 
     try {
       const response = await fetch(
-        `${API_BASE}/events/${eventId}/`,
+        `${API_BASE}events/${eventId}/`,
         {
           method: "DELETE",
           headers: authHeaders(),
