@@ -19,6 +19,14 @@ function eventupload() {
   const [uploadStatus, setUploadStatus] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Date input state (for date tags)
+  const [dateInput, setDateInput] = useState("");
+  const [selectedDates, setSelectedDates] = useState([]);
+
+  // Price input state (for price tags)
+  const [priceInput, setPriceInput] = useState("");
+  const [selectedPrices, setSelectedPrices] = useState([]);
+
   // Events display state
   const [events, setEvents] = useState([]);
   const [fetchingEvents, setFetchingEvents] = useState(false);
@@ -29,7 +37,7 @@ function eventupload() {
   // Configuration constants
   const MAX_FILES = 10;
   const MAX_SIZE_MB = 5;
-  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api/';
+  const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api/');
 
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
@@ -58,18 +66,23 @@ function eventupload() {
   // Fetch categories from backend API
   const fetchCategories = async () => {
     try {
-      const response = await fetch(`${API_BASE}categories/`, {
+      const url = `${API_BASE}categories/`;
+      console.log("Fetching categories from:", url);
+      const response = await fetch(url, {
         headers: authHeaders(),
       });
+      console.log("Categories response status:", response.status);
       if (response.ok) {
         const data = await response.json();
+        console.log("Categories fetched successfully:", data);
         setCategories(data);
         // Set first category as default if no category is selected
         if (data.length > 0 && !formData.category) {
           setFormData((prev) => ({ ...prev, category: data[0].id }));
         }
       } else {
-        console.error("Failed to fetch categories");
+        const errorText = await response.text();
+        console.error(`Failed to fetch categories. Status: ${response.status}`, errorText);
       }
     } catch (error) {
       console.error("Error fetching categories:", error);
@@ -80,15 +93,20 @@ function eventupload() {
   const fetchEvents = async () => {
     setFetchingEvents(true);
     try {
-      const response = await fetch(`${API_BASE}events/`, {
+      const url = `${API_BASE}events/`;
+      console.log("Fetching events from:", url);
+      const response = await fetch(url, {
         headers: authHeaders(),
       });
+      console.log("Events response status:", response.status);
       if (response.ok) {
         const data = await response.json();
+        console.log("Events fetched successfully:", data);
         setEvents(data);
       } else {
-        console.error("Failed to fetch events");
-        setUploadStatus("❌ Failed to fetch events");
+        const errorText = await response.text();
+        console.error(`Failed to fetch events. Status: ${response.status}`, errorText);
+        setUploadStatus(`❌ Failed to fetch events (${response.status})`);
       }
     } catch (error) {
       console.error("Error fetching events:", error);
@@ -105,6 +123,56 @@ function eventupload() {
       ...prev,
       [name]: value,
     }));
+  };
+
+  // Handle date input with Enter key
+  const handleDateKeyDown = (e) => {
+    if (e.key === "Enter" && dateInput.trim()) {
+      e.preventDefault();
+      const newDate = dateInput.trim();
+      setSelectedDates((prev) => [...prev, newDate]);
+      setDateInput("");
+    }
+  };
+
+  // Handle date input with Add button
+  const handleAddDate = () => {
+    if (dateInput.trim()) {
+      const newDate = dateInput.trim();
+      setSelectedDates((prev) => [...prev, newDate]);
+      setDateInput("");
+    }
+  };
+
+  // Remove date tag
+  const removeDateTag = (index) => {
+    const updatedDates = selectedDates.filter((_, i) => i !== index);
+    setSelectedDates(updatedDates);
+  };
+
+  // Handle price input with Enter key
+  const handlePriceKeyDown = (e) => {
+    if (e.key === "Enter" && priceInput.trim()) {
+      e.preventDefault();
+      const newPrice = priceInput.trim();
+      setSelectedPrices((prev) => [...prev, newPrice]);
+      setPriceInput("");
+    }
+  };
+
+  // Handle price input with Add button
+  const handleAddPrice = () => {
+    if (priceInput.trim()) {
+      const newPrice = priceInput.trim();
+      setSelectedPrices((prev) => [...prev, newPrice]);
+      setPriceInput("");
+    }
+  };
+
+  // Remove price tag
+  const removePriceTag = (index) => {
+    const updatedPrices = selectedPrices.filter((_, i) => i !== index);
+    setSelectedPrices(updatedPrices);
   };
 
   // Truncate long file names for display
@@ -301,8 +369,8 @@ function eventupload() {
     if (!formData.event_location?.trim()) {
       errors.push('Event location is required');
     }
-    if (!formData.event_date) {
-      errors.push('Event date is required');
+    if (selectedDates.length === 0) {
+      errors.push('At least one event date is required');
     }
     if (!formData.event_time) {
       errors.push('Event time is required');
@@ -336,25 +404,19 @@ function eventupload() {
       
       // IMPORTANT: Handle JSONField types - Django expects JSON strings for these
       // Convert to proper JSON format
-      if (formData.event_date && formData.event_date.trim()) {
-        // For event_date, send as a JSON string (single date)
-        formDataToSend.append('event_date', JSON.stringify(formData.event_date.trim()));
-        console.log('Sending event_date as:', JSON.stringify(formData.event_date.trim()));
+      if (selectedDates.length > 0) {
+        // For event_date, send as a JSON array of dates
+        formDataToSend.append('event_date', JSON.stringify(selectedDates));
+        console.log('Sending event_date as:', JSON.stringify(selectedDates));
       } else {
         // Send null for empty event_date
         formDataToSend.append('event_date', JSON.stringify(null));
       }
       
-      if (formData.ticket_price && formData.ticket_price.trim()) {
-        const price = parseFloat(formData.ticket_price.trim());
-        if (!isNaN(price)) {
-          // For ticket_price, send as a JSON number
-          formDataToSend.append('ticket_price', JSON.stringify(price));
-          console.log('Sending ticket_price as:', JSON.stringify(price));
-        } else {
-          // Invalid price, send null
-          formDataToSend.append('ticket_price', JSON.stringify(null));
-        }
+      if (selectedPrices.length > 0) {
+        // For ticket_price, send as a JSON array of prices
+        formDataToSend.append('ticket_price', JSON.stringify(selectedPrices));
+        console.log('Sending ticket_price as:', JSON.stringify(selectedPrices));
       } else {
         // Send null for empty ticket_price
         formDataToSend.append('ticket_price', JSON.stringify(null));
@@ -436,6 +498,10 @@ function eventupload() {
           ticket_price: "",
           category: categories.length > 0 ? categories[0].id : "",
         });
+        setSelectedDates([]);
+        setDateInput("");
+        setSelectedPrices([]);
+        setPriceInput("");
         setSelectedFiles([]);
         setPreviews([]);
 
@@ -656,14 +722,49 @@ function eventupload() {
                 {/* Date */}
                 <div className="flex items-center gap-4">
                   <label className="w-32 text-gray-700">Date</label>
-                  <input
-                    type="text"
-                    name="event_date"
-                    value={formData.event_date}
-                    onChange={handleInputChange}
-                    placeholder="e.g., 2025-09-28"
-                    className="flex-1 h-10 rounded-md border border-gray-300 px-3 focus:outline-none focus:ring-2 focus:ring-[#f28fa5]"
-                  />
+                  <div className="flex-1">
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={dateInput}
+                        onChange={(e) => setDateInput(e.target.value)}
+                        onKeyDown={handleDateKeyDown}
+                        placeholder="e.g., 2025-09-28"
+                        className="flex-1 h-10 rounded-md border border-gray-300 px-3 focus:outline-none focus:ring-2 focus:ring-[#f28fa5]"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddDate}
+                        className="px-4 h-10 bg-[#f28fa5] text-white rounded-md hover:bg-[#f28fa5]/90 font-medium"
+                      >
+                        Add
+                      </button>
+                    </div>
+                    {/* Debug: Show current state */}
+                    <div className="mt-1 text-xs text-gray-500">
+                      Input: "{dateInput}" | Dates count: {selectedDates.length}
+                    </div>
+                    {/* Display selected dates as tags */}
+                    {selectedDates.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {selectedDates.map((date, index) => (
+                          <div
+                            key={index}
+                            className="inline-flex items-center gap-2 bg-[#f28fa5] text-white px-3 py-1 rounded-full text-sm"
+                          >
+                            <span>{date}</span>
+                            <button
+                              type="button"
+                              onClick={() => removeDateTag(index)}
+                              className="text-white hover:text-gray-200 font-bold"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Time */}
@@ -706,15 +807,50 @@ function eventupload() {
 
                 {/* Price */}  
                 <div className="flex items-center gap-4">
-                  <label className="w-32 text-gray-700">Price (JSON)</label>
-                  <textarea
-                    name="ticket_price"
-                    value={formData.ticket_price}
-                    onChange={handleInputChange}
-                    placeholder='e.g., {"vip": 100, "regular": 50, "student": 25} or [100, 50, 25]'
-                    className="flex-1 h-20 rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#f28fa5] resize-none"
-                    rows={3}
-                  />
+                  <label className="w-32 text-gray-700">Price</label>
+                  <div className="flex-1">
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={priceInput}
+                        onChange={(e) => setPriceInput(e.target.value)}
+                        onKeyDown={handlePriceKeyDown}
+                        placeholder="e.g., VIP - 1000 or 500"
+                        className="flex-1 h-10 rounded-md border border-gray-300 px-3 focus:outline-none focus:ring-2 focus:ring-[#f28fa5]"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddPrice}
+                        className="px-4 h-10 bg-[#f28fa5] text-white rounded-md hover:bg-[#f28fa5]/90 font-medium"
+                      >
+                        Add
+                      </button>
+                    </div>
+                    {/* Debug: Show current state */}
+                    <div className="mt-1 text-xs text-gray-500">
+                      Input: "{priceInput}" | Prices count: {selectedPrices.length}
+                    </div>
+                    {/* Display selected prices as tags */}
+                    {selectedPrices.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {selectedPrices.map((price, index) => (
+                          <div
+                            key={index}
+                            className="inline-flex items-center gap-2 bg-[#f28fa5] text-white px-3 py-1 rounded-full text-sm"
+                          >
+                            <span>{price}</span>
+                            <button
+                              type="button"
+                              onClick={() => removePriceTag(index)}
+                              className="text-white hover:text-gray-200 font-bold"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Category (visible selector) */}

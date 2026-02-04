@@ -139,7 +139,7 @@ function adminProfile() {
     // Fetch customers list for emails and base roster
     (async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/customers/`, { headers });
+        const res = await fetch(`${API_BASE_URL}customers/`, { headers });
         if (!res.ok) return;
         const data = await res.json();
         setUsers(Array.isArray(data) ? data : toArray(data));
@@ -210,7 +210,7 @@ function adminProfile() {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       };
 
-      const res = await fetch(`${API_BASE_URL}/orders/${id}/`, {
+      const res = await fetch(`${API_BASE_URL}orders/${id}/`, {
         method: "DELETE",
         headers,
       });
@@ -248,7 +248,7 @@ function adminProfile() {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       };
 
-      const res = await fetch(`${API_BASE_URL}/customers/${id}/`, {
+      const res = await fetch(`${API_BASE_URL}customers/${id}/`, {
         method: "DELETE",
         headers,
       });

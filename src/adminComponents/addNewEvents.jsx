@@ -1,31 +1,34 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 function AddNewEvents() {
-  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api';
+  const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api').replace(/\/$/, '') + '/';
 
   const getToken = () =>
     localStorage.getItem("access_token") ||
     localStorage.getItem("token") ||
     localStorage.getItem("authToken");
 
-  const authHeaders = (json = false) => {
+  const authHeaders = useCallback((json = false) => {
     const token = getToken();
     const h = {};
     if (token) h.Authorization = `Bearer ${token}`;
     if (json) h["Content-Type"] = "application/json";
     return h;
-  };
+  }, []);
 
   // Form state
   const [formData, setFormData] = useState({
     event_name: "",
     event_location: "",
     event_time: "",
-    event_date: "",
     sale_date: "",
     ticket_price: "",
     category: "",
   });
+
+  // Date input state
+  const [dateInput, setDateInput] = useState("");
+  const [selectedDates, setSelectedDates] = useState([]);
 
   // Categories
   const [categories, setCategories] = useState([]);
@@ -56,7 +59,7 @@ function AddNewEvents() {
         if (!res.ok) throw new Error("Failed to fetch categories");
         const data = await res.json();
         setCategories(data || []);
-        if (data?.length && !formData.category) {
+        if (data?.length) {
           setFormData((p) => ({ ...p, category: data[0].id }));
         }
       } catch (e) {
@@ -64,12 +67,37 @@ function AddNewEvents() {
       }
     };
     fetchCategories();
-  }, []);
+  }, [API_BASE, authHeaders]);
 
   // Handlers
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((p) => ({ ...p, [name]: value }));
+  };
+
+  const handleDateKeyDown = (e) => {
+    console.log("Key pressed:", e.key, "Input value:", dateInput); // Debug
+    if (e.key === "Enter" && dateInput.trim()) {
+      e.preventDefault();
+      const newDate = dateInput.trim();
+      console.log("Adding date:", newDate); // Debug
+      setSelectedDates((prev) => [...prev, newDate]);
+      setDateInput("");
+    }
+  };
+
+  const handleAddDate = () => {
+    if (dateInput.trim()) {
+      const newDate = dateInput.trim();
+      console.log("Adding date via button:", newDate); // Debug
+      setSelectedDates((prev) => [...prev, newDate]);
+      setDateInput("");
+    }
+  };
+
+  const removeDateTag = (index) => {
+    const updatedDates = selectedDates.filter((_, i) => i !== index);
+    setSelectedDates(updatedDates);
   };
 
   const handleFileSelect = (event) => {
@@ -137,7 +165,7 @@ function AddNewEvents() {
     dragIndex.current = index;
     e.dataTransfer.effectAllowed = "move";
   };
-  const handleDragOver = (index) => (e) => {
+  const handleDragOver = () => (e) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
   };
@@ -207,7 +235,7 @@ function AddNewEvents() {
         event_name: formData.event_name,
         event_location: toNullIfEmpty(formData.event_location),
         event_time: toNullIfEmpty(formData.event_time),
-        event_date: toNullIfEmpty(formData.event_date),
+        event_date: selectedDates.length > 0 ? selectedDates : null,
         sale_date: toNullIfEmpty(formData.sale_date),
         ticket_price: toNullIfEmpty(formData.ticket_price),
         category: parseInt(formData.category),
@@ -254,15 +282,15 @@ function AddNewEvents() {
       } else {
         setUploadStatus(`✅ Event "${payload.event_name}" created successfully!`);
         // Reset
-        setFormData((p) => ({
+        setFormData(() => ({
           event_name: "",
           event_location: "",
           event_time: "",
-          event_date: "",
           sale_date: "",
           ticket_price: "",
           category: categories.length ? categories[0].id : "",
         }));
+        setSelectedDates([]);
         setSelectedFiles([]);
         setPreviews([]);
         if (fileInputRef.current) fileInputRef.current.value = "";
@@ -393,14 +421,58 @@ function AddNewEvents() {
               {/* Date */}
               <div className="flex items-center gap-4">
                 <label className="w-32 text-gray-700">Date</label>
-                <input
-                  type="text"
-                  name="event_date"
-                  value={formData.event_date}
-                  onChange={handleInputChange}
-                  placeholder="e.g., 2025-09-28"
-                  className="flex-1 h-10 rounded-md border border-gray-300 px-3 focus:outline-none focus:ring-2 focus:ring-[#f28fa5]"
-                />
+                <div className="flex-1">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={dateInput}
+                      onChange={(e) => {
+                        console.log("Input changed to:", e.target.value);
+                        setDateInput(e.target.value);
+                      }}
+                      onKeyDown={handleDateKeyDown}
+                      placeholder="e.g., 2025-09-28"
+                      className="flex-1 h-10 rounded-md border border-gray-300 px-3 focus:outline-none focus:ring-2 focus:ring-[#f28fa5]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        console.log("Add button clicked! Current dateInput:", dateInput);
+                        handleAddDate();
+                      }}
+                      className="px-4 h-10 bg-[#f28fa5] text-white rounded-md hover:bg-[#f28fa5]/90 font-medium"
+                    >
+                      Add
+                    </button>
+                  </div>
+                  {/* Debug: Show current state */}
+                  <div className="mt-1 text-xs text-gray-500">
+                    Input: "{dateInput}" | Dates count: {selectedDates.length}
+                  </div>
+                  {/* Display selected dates as tags */}
+                  {selectedDates.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {selectedDates.map((date, index) => (
+                        <div
+                          key={index}
+                          className="inline-flex items-center gap-2 bg-[#f28fa5] text-white px-3 py-1 rounded-full text-sm"
+                        >
+                          <span>{date}</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              console.log("Removing date at index:", index);
+                              removeDateTag(index);
+                            }}
+                            className="text-white hover:text-gray-200 font-bold"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Time */}

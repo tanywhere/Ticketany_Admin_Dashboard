@@ -135,15 +135,20 @@ function StatusChange() {
   };
 
   const submitCompleted = async () => {
-    await patchTicket(completeModal.ticket.id, {
-      status: "complete",
-      selling_price: completeModal.selling_price,
-      zone: completeModal.zone,
-      row: completeModal.row,
-      seat: completeModal.seat,
-    });
-    setCompleteModal({ open: false, ticket: null });
-    loadTickets();
+    try {
+      await patchTicket(completeModal.ticket.id, {
+        status: "complete",
+        selling_price: completeModal.selling_price,
+        zone: completeModal.zone,
+        row: completeModal.row,
+        seat: completeModal.seat,
+      });
+      setCompleteModal({ open: false, ticket: null });
+      loadTickets();
+    } catch (e) {
+      console.error("Error updating ticket:", e);
+      alert("Failed to update ticket status: " + e.message);
+    }
   };
 
   const markCancelled = async (t) => {
@@ -439,7 +444,10 @@ function StatusChange() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-40">
           <form
             className="bg-white p-6 rounded w-full max-w-md"
-            onSubmit={submitCompleted}
+            onSubmit={(e) => {
+              e.preventDefault();
+              submitCompleted();
+            }}
           >
             <h2 className="text-lg font-semibold mb-4">
               Mark Ticket as Completed

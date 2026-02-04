@@ -26,12 +26,18 @@ function EditEvent() {
     event_name: "",
     event_location: "",
     event_time: "",
-    event_date: "",
     sale_date: "",
-    ticket_price: "",
     category: "",
   });
   const [categories, setCategories] = useState([]);
+  
+  // Date input state (for date tags)
+  const [dateInput, setDateInput] = useState("");
+  const [selectedDates, setSelectedDates] = useState([]);
+  
+  // Price input state (for price tags)
+  const [priceInput, setPriceInput] = useState("");
+  const [selectedPrices, setSelectedPrices] = useState([]);
 
   // Posters (existing + new) via a combined view
   // existingImages: array of base64/url strings from backend
@@ -96,11 +102,61 @@ function EditEvent() {
         event_name: data.event_name || "",
         event_location: data.event_location || "",
         event_time: data.event_time || "",
-        event_date: data.event_date || "",
         sale_date: data.sale_date || "",
-        ticket_price: data.ticket_price || "",
         category: data.category || "",
       });
+      
+      // Handle event_date - convert to array of date tags
+      if (data.event_date) {
+        let dates = [];
+        if (Array.isArray(data.event_date)) {
+          dates = data.event_date.map(d => String(d));
+        } else if (typeof data.event_date === 'string') {
+          try {
+            const parsed = JSON.parse(data.event_date);
+            if (Array.isArray(parsed)) {
+              dates = parsed.map(d => String(d));
+            } else {
+              dates = [String(data.event_date)];
+            }
+          } catch {
+            dates = [String(data.event_date)];
+          }
+        } else {
+          dates = [String(data.event_date)];
+        }
+        setSelectedDates(dates);
+      } else {
+        setSelectedDates([]);
+      }
+      
+      // Handle ticket_price - convert to array of price tags
+      if (data.ticket_price) {
+        let prices = [];
+        if (Array.isArray(data.ticket_price)) {
+          prices = data.ticket_price.map(p => String(p));
+        } else if (typeof data.ticket_price === 'object') {
+          prices = Object.entries(data.ticket_price).map(([key, val]) => `${key}: ${val}`);
+        } else if (typeof data.ticket_price === 'string') {
+          try {
+            const parsed = JSON.parse(data.ticket_price);
+            if (Array.isArray(parsed)) {
+              prices = parsed.map(p => String(p));
+            } else if (typeof parsed === 'object') {
+              prices = Object.entries(parsed).map(([key, val]) => `${key}: ${val}`);
+            } else {
+              prices = [String(parsed)];
+            }
+          } catch {
+            prices = [String(data.ticket_price)];
+          }
+        } else {
+          prices = [String(data.ticket_price)];
+        }
+        setSelectedPrices(prices);
+      } else {
+        setSelectedPrices([]);
+      }
 
       // Use the new images array structure with image_url
       if (data.images?.length > 0) {
@@ -126,6 +182,56 @@ function EditEvent() {
 
   const toggleEdit = (name) => {
     setEditing((p) => ({ ...p, [name]: !p[name] }));
+  };
+
+  // Handle date input with Enter key
+  const handleDateKeyDown = (e) => {
+    if (e.key === "Enter" && dateInput.trim()) {
+      e.preventDefault();
+      const newDate = dateInput.trim();
+      setSelectedDates((prev) => [...prev, newDate]);
+      setDateInput("");
+    }
+  };
+
+  // Handle date input with Add button
+  const handleAddDate = () => {
+    if (dateInput.trim()) {
+      const newDate = dateInput.trim();
+      setSelectedDates((prev) => [...prev, newDate]);
+      setDateInput("");
+    }
+  };
+
+  // Remove date tag
+  const removeDateTag = (index) => {
+    const updatedDates = selectedDates.filter((_, i) => i !== index);
+    setSelectedDates(updatedDates);
+  };
+
+  // Handle price input with Enter key
+  const handlePriceKeyDown = (e) => {
+    if (e.key === "Enter" && priceInput.trim()) {
+      e.preventDefault();
+      const newPrice = priceInput.trim();
+      setSelectedPrices((prev) => [...prev, newPrice]);
+      setPriceInput("");
+    }
+  };
+
+  // Handle price input with Add button
+  const handleAddPrice = () => {
+    if (priceInput.trim()) {
+      const newPrice = priceInput.trim();
+      setSelectedPrices((prev) => [...prev, newPrice]);
+      setPriceInput("");
+    }
+  };
+
+  // Remove price tag
+  const removePriceTag = (index) => {
+    const updatedPrices = selectedPrices.filter((_, i) => i !== index);
+    setSelectedPrices(updatedPrices);
   };
 
   // Posters: combined view (existing first, then newly added)
@@ -245,31 +351,17 @@ function EditEvent() {
       formDataToSend.append('event_time', formData.event_time || '');
       
       // Handle JSONField types - Django expects JSON strings
-      if (formData.event_date !== null && formData.event_date !== undefined && formData.event_date !== '') {
-        formDataToSend.append('event_date', JSON.stringify(formData.event_date));
+      if (selectedDates.length > 0) {
+        formDataToSend.append('event_date', JSON.stringify(selectedDates));
       } else {
         formDataToSend.append('event_date', JSON.stringify(null));
       }
       
       formDataToSend.append('sale_date', formData.sale_date || '');
       
-      if (formData.ticket_price !== null && formData.ticket_price !== undefined && formData.ticket_price !== '') {
-        // ticket_price can be a JSON object/array or a number
-        let priceData;
-        if (typeof formData.ticket_price === 'string') {
-          try {
-            // Try to parse as JSON first
-            priceData = JSON.parse(formData.ticket_price);
-          } catch {
-            // If not valid JSON, treat as single number
-            const numPrice = parseFloat(formData.ticket_price);
-            priceData = isNaN(numPrice) ? null : numPrice;
-          }
-        } else {
-          priceData = formData.ticket_price;
-        }
-        
-        formDataToSend.append('ticket_price', JSON.stringify(priceData));
+      // Handle ticket_price as array
+      if (selectedPrices.length > 0) {
+        formDataToSend.append('ticket_price', JSON.stringify(selectedPrices));
       } else {
         formDataToSend.append('ticket_price', JSON.stringify(null));
       }
@@ -381,29 +473,16 @@ function EditEvent() {
           </div>
         ) : (
           <div className="flex items-center gap-2">
-            {name === "ticket_price" ? (
-              <textarea
-                autoFocus
-                value={formData[name] ?? ""}
-                placeholder={placeholder}
-                onChange={(e) => handleInput(name, e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && toggleEdit(name)}
-                onBlur={() => toggleEdit(name)}
-                className="w-full h-20 rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#f28fa5] resize-none"
-                rows={3}
-              />
-            ) : (
-              <input
-                autoFocus
-                type={name === "ticket_price" ? "text" : "text"}
-                value={formData[name] ?? ""}
-                placeholder={placeholder}
-                onChange={(e) => handleInput(name, e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && toggleEdit(name)}
-                onBlur={() => toggleEdit(name)}
-                className="w-full h-10 rounded-md border border-gray-300 px-3 focus:outline-none focus:ring-2 focus:ring-[#f28fa5]"
-              />
-            )}
+            <input
+              autoFocus
+              type={name === "event_time" ? "time" : "text"}
+              value={formData[name] ?? ""}
+              placeholder={placeholder}
+              onChange={(e) => handleInput(name, e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && toggleEdit(name)}
+              onBlur={() => toggleEdit(name)}
+              className="w-full h-10 rounded-md border border-gray-300 px-3 focus:outline-none focus:ring-2 focus:ring-[#f28fa5]"
+            />
           </div>
         )}
       </div>
@@ -554,11 +633,50 @@ function EditEvent() {
                 name="event_name"
                 placeholder="Event name"
               />
-              <InlineRow
-                label="Date"
-                name="event_date"
-                placeholder="12 Sep, 13 Sep..."
-              />
+              
+              {/* Date */}
+              <div className="flex items-center gap-4">
+                <label className="w-32 text-gray-700">Date</label>
+                <div className="flex-1">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={dateInput}
+                      onChange={(e) => setDateInput(e.target.value)}
+                      onKeyDown={handleDateKeyDown}
+                      placeholder="e.g., 2025-09-28"
+                      className="flex-1 h-10 rounded-md border border-gray-300 px-3 focus:outline-none focus:ring-2 focus:ring-[#f28fa5]"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddDate}
+                      className="px-4 h-10 bg-[#f28fa5] text-white rounded-md hover:bg-[#f28fa5]/90 font-medium"
+                    >
+                      Add
+                    </button>
+                  </div>
+                  {/* Display selected dates as tags */}
+                  {selectedDates.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {selectedDates.map((date, index) => (
+                        <div
+                          key={index}
+                          className="inline-flex items-center gap-2 bg-[#f28fa5] text-white px-3 py-1 rounded-full text-sm"
+                        >
+                          <span>{date}</span>
+                          <button
+                            type="button"
+                            onClick={() => removeDateTag(index)}
+                            className="text-white hover:text-gray-200 font-bold"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
               <InlineRow
                 label="Time"
                 name="event_time"
@@ -574,11 +692,50 @@ function EditEvent() {
                 name="sale_date"
                 placeholder="1 July 2025 - 2 Sep 2025"
               />
-              <InlineRow
-                label="Price (JSON)"
-                name="ticket_price"
-                placeholder='{"vip": 100, "regular": 50, "student": 25} or [100, 50, 25]'
-              />
+              
+              {/* Price */}
+              <div className="flex items-center gap-4">
+                <label className="w-32 text-gray-700">Price</label>
+                <div className="flex-1">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={priceInput}
+                      onChange={(e) => setPriceInput(e.target.value)}
+                      onKeyDown={handlePriceKeyDown}
+                      placeholder="e.g., VIP - 1000 or 500"
+                      className="flex-1 h-10 rounded-md border border-gray-300 px-3 focus:outline-none focus:ring-2 focus:ring-[#f28fa5]"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddPrice}
+                      className="px-4 h-10 bg-[#f28fa5] text-white rounded-md hover:bg-[#f28fa5]/90 font-medium"
+                    >
+                      Add
+                    </button>
+                  </div>
+                  {/* Display selected prices as tags */}
+                  {selectedPrices.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {selectedPrices.map((price, index) => (
+                        <div
+                          key={index}
+                          className="inline-flex items-center gap-2 bg-[#f28fa5] text-white px-3 py-1 rounded-full text-sm"
+                        >
+                          <span>{price}</span>
+                          <button
+                            type="button"
+                            onClick={() => removePriceTag(index)}
+                            className="text-white hover:text-gray-200 font-bold"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
 
               {/* Category Select */}
               <div className="flex items-center gap-4">
