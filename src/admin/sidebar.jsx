@@ -1,5 +1,7 @@
 import React, { useEffect } from "react";
 import { Link, useNavigate, NavLink } from "react-router";
+import logo from "../assets/logo.jpg";
+
 
 const SIDEBAR_WIDTH = "16rem"; // Tailwind w-64
 
@@ -32,6 +34,7 @@ function Sidebar() {
       aria-hidden={false}
     >
       <div className="flex items-center justify-center h-16 border-b-2 border-black px-4 bg-white">
+         <img src={logo} alt="Logo" className="h-10 w-auto mr-3" />
         <h1 className="text-xl font-bold truncate">Admin Dashboard</h1>
       </div>
 
@@ -43,7 +46,7 @@ function Sidebar() {
               end
               className={({ isActive }) =>
                 `flex items-center px-4 py-2 text-sm rounded-lg transition-colors
-     ${isActive ? "bg-gray-200 font-semibold text-[#ee6786ff]" : "hover:bg-gray-100"}`
+     ${isActive ? " font-semibold text-[#ee6786ff]" : "hover:bg-gray-200"}`
               }
               title="Dashboard"
             >
@@ -73,7 +76,7 @@ function Sidebar() {
               to="/admin/statuschange"
               className={({ isActive }) =>
                 `flex items-center px-4 py-2 text-sm rounded-lg transition-colors 
-     ${isActive ? "bg-gray-200 font-semibold text-[#ee6786ff]" : "hover:bg-gray-100"}`
+     ${isActive ? " font-semibold text-[#ee6786ff]" : "hover:bg-gray-200"}`
               }
               title="Status Change"
             >
@@ -97,7 +100,7 @@ function Sidebar() {
               to="/admin/eventupload"
               className={({ isActive }) =>
                 `flex items-center px-4 py-2 text-sm rounded-lg transition-colors 
-     ${isActive ? "bg-gray-200 font-semibold text-[#ee6786ff]" : "hover:bg-gray-100"}`
+     ${isActive ? " font-semibold text-[#ee6786ff]" : "hover:bg-gray-200"}`
               }
               title="Event Management"
             >
@@ -121,7 +124,7 @@ function Sidebar() {
               to="/admin/uploadbanner"
               className={({ isActive }) =>
                 `flex items-center px-4 py-2 text-sm rounded-lg transition-colors 
-     ${isActive ? "bg-gray-200 font-semibold text-[#ee6786ff]" : "hover:bg-gray-100"}`
+     ${isActive ? " font-semibold text-[#ee6786ff]" : "hover:bg-gray-200"}`
               }
               title="Banner Management"
             >
@@ -145,7 +148,7 @@ function Sidebar() {
               to="/admin/categories"
               className={({ isActive }) =>
                 `flex items-center px-4 py-2 text-sm rounded-lg transition-colors 
-     ${isActive ? "bg-gray-200 font-semibold text-[#ee6786ff]" : "hover:bg-gray-100"}`
+     ${isActive ? " font-semibold text-[#ee6786ff]" : "hover:bg-gray-200"}`
               }
               title="Category Management"
             >
@@ -172,7 +175,7 @@ function Sidebar() {
         <div className="flex items-center justify-center px-4 py-4">
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 px-4 py-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors"
+            className="flex items-center gap-1 px-4 py-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors"
             title="Logout"
           >
             <svg
@@ -188,7 +191,7 @@ function Sidebar() {
                 d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
               />
             </svg>
-            <span className="text-base font-semibold">Sign Out</span>
+            <span className="text-base text-sm font-semibold">Sign Out</span>
           </button>
         </div>
       </div>

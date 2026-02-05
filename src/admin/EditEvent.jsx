@@ -5,7 +5,8 @@ function EditEvent() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api/';
+  const API_BASE =
+    import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api/";
 
   const getToken = () =>
     localStorage.getItem("access_token") ||
@@ -30,11 +31,11 @@ function EditEvent() {
     category: "",
   });
   const [categories, setCategories] = useState([]);
-  
+
   // Date input state (for date tags)
   const [dateInput, setDateInput] = useState("");
   const [selectedDates, setSelectedDates] = useState([]);
-  
+
   // Price input state (for price tags)
   const [priceInput, setPriceInput] = useState("");
   const [selectedPrices, setSelectedPrices] = useState([]);
@@ -91,7 +92,9 @@ function EditEvent() {
         headers: authHeaders(),
       });
       if (res.status === 401 || res.status === 403) {
-        setStatus("❌ Unauthorized/Forbidden (admin only). Please login again.");
+        setStatus(
+          "❌ Unauthorized/Forbidden (admin only). Please login again.",
+        );
         navigate("/admin/login");
         return;
       }
@@ -105,17 +108,17 @@ function EditEvent() {
         sale_date: data.sale_date || "",
         category: data.category || "",
       });
-      
+
       // Handle event_date - convert to array of date tags
       if (data.event_date) {
         let dates = [];
         if (Array.isArray(data.event_date)) {
-          dates = data.event_date.map(d => String(d));
-        } else if (typeof data.event_date === 'string') {
+          dates = data.event_date.map((d) => String(d));
+        } else if (typeof data.event_date === "string") {
           try {
             const parsed = JSON.parse(data.event_date);
             if (Array.isArray(parsed)) {
-              dates = parsed.map(d => String(d));
+              dates = parsed.map((d) => String(d));
             } else {
               dates = [String(data.event_date)];
             }
@@ -129,21 +132,25 @@ function EditEvent() {
       } else {
         setSelectedDates([]);
       }
-      
+
       // Handle ticket_price - convert to array of price tags
       if (data.ticket_price) {
         let prices = [];
         if (Array.isArray(data.ticket_price)) {
-          prices = data.ticket_price.map(p => String(p));
-        } else if (typeof data.ticket_price === 'object') {
-          prices = Object.entries(data.ticket_price).map(([key, val]) => `${key}: ${val}`);
-        } else if (typeof data.ticket_price === 'string') {
+          prices = data.ticket_price.map((p) => String(p));
+        } else if (typeof data.ticket_price === "object") {
+          prices = Object.entries(data.ticket_price).map(
+            ([key, val]) => `${key}: ${val}`,
+          );
+        } else if (typeof data.ticket_price === "string") {
           try {
             const parsed = JSON.parse(data.ticket_price);
             if (Array.isArray(parsed)) {
-              prices = parsed.map(p => String(p));
-            } else if (typeof parsed === 'object') {
-              prices = Object.entries(parsed).map(([key, val]) => `${key}: ${val}`);
+              prices = parsed.map((p) => String(p));
+            } else if (typeof parsed === "object") {
+              prices = Object.entries(parsed).map(
+                ([key, val]) => `${key}: ${val}`,
+              );
             } else {
               prices = [String(parsed)];
             }
@@ -160,7 +167,9 @@ function EditEvent() {
 
       // Use the new images array structure with image_url
       if (data.images?.length > 0) {
-        const imageUrls = data.images.map(img => img.image_url).filter(Boolean);
+        const imageUrls = data.images
+          .map((img) => img.image_url)
+          .filter(Boolean);
         setExistingImages(imageUrls);
       } else if (data.event_image) {
         // Fallback for old event_image format
@@ -244,12 +253,12 @@ function EditEvent() {
         file: nf.file,
       })),
     ],
-    [existingImages, newFiles]
+    [existingImages, newFiles],
   );
 
   const slotCount = useMemo(
     () => Math.max(6, posters.length || 0),
-    [posters.length]
+    [posters.length],
   );
 
   const handleNewFiles = (e) => {
@@ -344,34 +353,34 @@ function EditEvent() {
     try {
       // Create FormData object
       const formDataToSend = new FormData();
-      
+
       // Add text fields with proper JSON handling for JSONField
-      formDataToSend.append('event_name', formData.event_name);
-      formDataToSend.append('event_location', formData.event_location || '');
-      formDataToSend.append('event_time', formData.event_time || '');
-      
+      formDataToSend.append("event_name", formData.event_name);
+      formDataToSend.append("event_location", formData.event_location || "");
+      formDataToSend.append("event_time", formData.event_time || "");
+
       // Handle JSONField types - Django expects JSON strings
       if (selectedDates.length > 0) {
-        formDataToSend.append('event_date', JSON.stringify(selectedDates));
+        formDataToSend.append("event_date", JSON.stringify(selectedDates));
       } else {
-        formDataToSend.append('event_date', JSON.stringify(null));
+        formDataToSend.append("event_date", JSON.stringify(null));
       }
-      
-      formDataToSend.append('sale_date', formData.sale_date || '');
-      
+
+      formDataToSend.append("sale_date", formData.sale_date || "");
+
       // Handle ticket_price as array
       if (selectedPrices.length > 0) {
-        formDataToSend.append('ticket_price', JSON.stringify(selectedPrices));
+        formDataToSend.append("ticket_price", JSON.stringify(selectedPrices));
       } else {
-        formDataToSend.append('ticket_price', JSON.stringify(null));
+        formDataToSend.append("ticket_price", JSON.stringify(null));
       }
-      
-      formDataToSend.append('category', formData.category || '');
+
+      formDataToSend.append("category", formData.category || "");
 
       // Add new image files directly to FormData
-      newFiles.forEach(fileObj => {
+      newFiles.forEach((fileObj) => {
         if (fileObj.file) {
-          formDataToSend.append('images', fileObj.file);
+          formDataToSend.append("images", fileObj.file);
         }
       });
       // Add existing image URLs to inform backend which to keep
@@ -386,7 +395,9 @@ function EditEvent() {
       });
 
       if (res.status === 401 || res.status === 403) {
-        setStatus("❌ Unauthorized/Forbidden (admin only). Please login again.");
+        setStatus(
+          "❌ Unauthorized/Forbidden (admin only). Please login again.",
+        );
         navigate("/admin/login");
         return;
       }
@@ -424,7 +435,9 @@ function EditEvent() {
       });
 
       if (res.status === 401 || res.status === 403) {
-        setStatus("❌ Unauthorized/Forbidden (admin only). Please login again.");
+        setStatus(
+          "❌ Unauthorized/Forbidden (admin only). Please login again.",
+        );
         navigate("/admin/login");
         return;
       }
@@ -475,7 +488,7 @@ function EditEvent() {
           <div className="flex items-center gap-2">
             <input
               autoFocus
-              type={name === "event_time" ? "time" : "text"}
+              type="text"
               value={formData[name] ?? ""}
               placeholder={placeholder}
               onChange={(e) => handleInput(name, e.target.value)}
@@ -633,7 +646,7 @@ function EditEvent() {
                 name="event_name"
                 placeholder="Event name"
               />
-              
+
               {/* Date */}
               <div className="flex items-center gap-4">
                 <label className="w-32 text-gray-700">Date</label>
@@ -644,7 +657,7 @@ function EditEvent() {
                       value={dateInput}
                       onChange={(e) => setDateInput(e.target.value)}
                       onKeyDown={handleDateKeyDown}
-                      placeholder="e.g., 2025-09-28"
+                      placeholder="e.g., 1 JAN 2026"
                       className="flex-1 h-10 rounded-md border border-gray-300 px-3 focus:outline-none focus:ring-2 focus:ring-[#f28fa5]"
                     />
                     <button
@@ -680,7 +693,7 @@ function EditEvent() {
               <InlineRow
                 label="Time"
                 name="event_time"
-                placeholder="20:00 - 22:00"
+                placeholder="e.g, 18:00 - 19:00 PM"
               />
               <InlineRow
                 label="Location"
@@ -690,9 +703,9 @@ function EditEvent() {
               <InlineRow
                 label="Sale Date"
                 name="sale_date"
-                placeholder="1 July 2025 - 2 Sep 2025"
+                placeholder="e.g, 1 July 2025 - 2 Sep 2025"
               />
-              
+
               {/* Price */}
               <div className="flex items-center gap-4">
                 <label className="w-32 text-gray-700">Price</label>
@@ -703,7 +716,7 @@ function EditEvent() {
                       value={priceInput}
                       onChange={(e) => setPriceInput(e.target.value)}
                       onKeyDown={handlePriceKeyDown}
-                      placeholder="e.g., VIP - 1000 or 500"
+                      placeholder="e.g., VIP-3000"
                       className="flex-1 h-10 rounded-md border border-gray-300 px-3 focus:outline-none focus:ring-2 focus:ring-[#f28fa5]"
                     />
                     <button

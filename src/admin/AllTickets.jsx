@@ -220,7 +220,7 @@ function AllTickets() {
   };
 
   return (
-    <div className="max-w-full mx-auto p-4 sm:p-6">
+    <div className="max-w-full mx-auto">
       <h1 className="text-xl sm:text-2xl font-semibold text-black mb-4">
         All Orders and Tickets
       </h1>

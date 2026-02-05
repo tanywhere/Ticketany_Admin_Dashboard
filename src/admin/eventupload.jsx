@@ -37,7 +37,8 @@ function eventupload() {
   // Configuration constants
   const MAX_FILES = 10;
   const MAX_SIZE_MB = 5;
-  const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api/');
+  const API_BASE =
+    import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api/";
 
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
@@ -82,7 +83,10 @@ function eventupload() {
         }
       } else {
         const errorText = await response.text();
-        console.error(`Failed to fetch categories. Status: ${response.status}`, errorText);
+        console.error(
+          `Failed to fetch categories. Status: ${response.status}`,
+          errorText,
+        );
       }
     } catch (error) {
       console.error("Error fetching categories:", error);
@@ -105,7 +109,10 @@ function eventupload() {
         setEvents(data);
       } else {
         const errorText = await response.text();
-        console.error(`Failed to fetch events. Status: ${response.status}`, errorText);
+        console.error(
+          `Failed to fetch events. Status: ${response.status}`,
+          errorText,
+        );
         setUploadStatus(`❌ Failed to fetch events (${response.status})`);
       }
     } catch (error) {
@@ -220,7 +227,7 @@ function eventupload() {
         (existing) =>
           existing.name === newFile.name &&
           existing.size === newFile.size &&
-          existing.lastModified === newFile.lastModified
+          existing.lastModified === newFile.lastModified,
       );
       if (!isDuplicate) {
         mergedFiles.push(newFile);
@@ -349,7 +356,7 @@ function eventupload() {
   // Derived for poster grid slots
   const slotCount = useMemo(
     () => Math.max(6, previews.length || 0),
-    [previews.length]
+    [previews.length],
   );
 
   // Convert empty strings to null for backend
@@ -361,32 +368,32 @@ function eventupload() {
   const uploadEvent = async () => {
     // Inline validation
     const errors = [];
-    
+
     // Required field validation
     if (!formData.event_name?.trim()) {
-      errors.push('Event name is required');
+      errors.push("Event name is required");
     }
     if (!formData.event_location?.trim()) {
-      errors.push('Event location is required');
+      errors.push("Event location is required");
     }
     if (selectedDates.length === 0) {
-      errors.push('At least one event date is required');
+      errors.push("At least one event date is required");
     }
     if (!formData.event_time) {
-      errors.push('Event time is required');
+      errors.push("Event time is required");
     }
     if (!formData.category) {
-      errors.push('Category is required');
+      errors.push("Category is required");
     }
     if (selectedFiles.length === 0) {
-      errors.push('At least one image is required');
+      errors.push("At least one image is required");
     }
     if (selectedFiles.length > MAX_FILES) {
       errors.push(`Maximum ${MAX_FILES} images allowed`);
     }
-    
+
     if (errors.length > 0) {
-      setUploadStatus('❌ Validation errors:\n' + errors.join('\n'));
+      setUploadStatus("❌ Validation errors:\n" + errors.join("\n"));
       return;
     }
 
@@ -396,51 +403,51 @@ function eventupload() {
     try {
       // Create FormData with proper backend format
       const formDataToSend = new FormData();
-      
+
       // Add text fields exactly as Django expects
-      formDataToSend.append('event_name', formData.event_name);
-      formDataToSend.append('event_location', formData.event_location || '');
-      formDataToSend.append('event_time', formData.event_time || '');
-      
+      formDataToSend.append("event_name", formData.event_name);
+      formDataToSend.append("event_location", formData.event_location || "");
+      formDataToSend.append("event_time", formData.event_time || "");
+
       // IMPORTANT: Handle JSONField types - Django expects JSON strings for these
       // Convert to proper JSON format
       if (selectedDates.length > 0) {
         // For event_date, send as a JSON array of dates
-        formDataToSend.append('event_date', JSON.stringify(selectedDates));
-        console.log('Sending event_date as:', JSON.stringify(selectedDates));
+        formDataToSend.append("event_date", JSON.stringify(selectedDates));
+        console.log("Sending event_date as:", JSON.stringify(selectedDates));
       } else {
         // Send null for empty event_date
-        formDataToSend.append('event_date', JSON.stringify(null));
+        formDataToSend.append("event_date", JSON.stringify(null));
       }
-      
+
       if (selectedPrices.length > 0) {
         // For ticket_price, send as a JSON array of prices
-        formDataToSend.append('ticket_price', JSON.stringify(selectedPrices));
-        console.log('Sending ticket_price as:', JSON.stringify(selectedPrices));
+        formDataToSend.append("ticket_price", JSON.stringify(selectedPrices));
+        console.log("Sending ticket_price as:", JSON.stringify(selectedPrices));
       } else {
         // Send null for empty ticket_price
-        formDataToSend.append('ticket_price', JSON.stringify(null));
+        formDataToSend.append("ticket_price", JSON.stringify(null));
       }
-      
+
       if (formData.sale_date) {
-        formDataToSend.append('sale_date', formData.sale_date);
+        formDataToSend.append("sale_date", formData.sale_date);
       }
-      
+
       // IMPORTANT: Category as integer (foreign key)
       if (formData.category) {
         const categoryId = parseInt(formData.category, 10);
-        formDataToSend.append('category', categoryId);
-        console.log('Sending category as:', categoryId);
+        formDataToSend.append("category", categoryId);
+        console.log("Sending category as:", categoryId);
       }
 
       // Add image files (this part was correct)
       selectedFiles.forEach((file, index) => {
-        formDataToSend.append('images', file);
+        formDataToSend.append("images", file);
         console.log(`Adding image ${index}:`, file.name, file.type);
       });
-      
+
       // Debug: show all FormData entries
-      console.log('=== Complete FormData being sent ===');
+      console.log("=== Complete FormData being sent ===");
       for (let pair of formDataToSend.entries()) {
         console.log(`${pair[0]}:`, pair[1]);
       }
@@ -472,7 +479,9 @@ function eventupload() {
       });
 
       if (response.status === 401 || response.status === 403) {
-        setUploadStatus("❌ Unauthorized/Forbidden (admin only). Please login again.");
+        setUploadStatus(
+          "❌ Unauthorized/Forbidden (admin only). Please login again.",
+        );
         navigate("/admin/login");
         return;
       }
@@ -485,7 +494,7 @@ function eventupload() {
 
       if (response.ok) {
         setUploadStatus(
-          `✅ Event "${formDataToSend.get('event_name')}" created successfully!`
+          `✅ Event "${formDataToSend.get("event_name")}" created successfully!`,
         );
 
         // Reset form
@@ -507,30 +516,33 @@ function eventupload() {
 
         // Clear file input
         if (fileInputRef.current) {
-          fileInputRef.current.value = '';
+          fileInputRef.current.value = "";
         }
 
         // Refresh events list
         fetchEvents();
       } else {
         // Handle error responses with better error parsing
-        let errorMsg = 'Failed to create event';
-        
-        if (typeof responseData === 'object' && responseData) {
+        let errorMsg = "Failed to create event";
+
+        if (typeof responseData === "object" && responseData) {
           // Handle validation errors from Django
           const errors = [];
           Object.entries(responseData).forEach(([key, value]) => {
             if (Array.isArray(value)) {
-              errors.push(`${key}: ${value.join(', ')}`);
+              errors.push(`${key}: ${value.join(", ")}`);
             } else {
               errors.push(`${key}: ${value}`);
             }
           });
-          errorMsg = errors.length > 0 ? errors.join('\\n') : JSON.stringify(responseData);
-        } else if (typeof responseData === 'string') {
+          errorMsg =
+            errors.length > 0
+              ? errors.join("\\n")
+              : JSON.stringify(responseData);
+        } else if (typeof responseData === "string") {
           errorMsg = responseData;
         }
-        
+
         setUploadStatus(`❌ ${errorMsg}`);
       }
     } catch (error) {
@@ -555,16 +567,15 @@ function eventupload() {
     }
 
     try {
-      const response = await fetch(
-        `${API_BASE}events/${eventId}/`,
-        {
-          method: "DELETE",
-          headers: authHeaders(),
-        }
-      );
+      const response = await fetch(`${API_BASE}events/${eventId}/`, {
+        method: "DELETE",
+        headers: authHeaders(),
+      });
 
       if (response.status === 401 || response.status === 403) {
-        setUploadStatus("❌ Unauthorized/Forbidden (admin only). Please login again.");
+        setUploadStatus(
+          "❌ Unauthorized/Forbidden (admin only). Please login again.",
+        );
         navigate("/admin/login");
         return;
       }
@@ -592,7 +603,7 @@ function eventupload() {
     if (event?.images?.length > 0) {
       return event.images[0].image_url; // Use image_url from EventImageSerializer
     }
-    
+
     // Fallback for old event_image format
     if (event.event_image && typeof event.event_image === "string") {
       if (event.event_image.includes(IMAGE_SEPARATOR)) {
@@ -606,9 +617,9 @@ function eventupload() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-6 pb-16">
+    <div className="min-h-screen pt-6 pb-16">
       {/* Event Creation Form Section */}
-      <div className="max-w-6xl mx-auto mb-12">
+      <div className="max-w-7xl mx-auto mb-12">
         <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
           <div className="grid grid-cols-12">
             {/* Left: Posters area */}
@@ -729,7 +740,7 @@ function eventupload() {
                         value={dateInput}
                         onChange={(e) => setDateInput(e.target.value)}
                         onKeyDown={handleDateKeyDown}
-                        placeholder="e.g., 2025-09-28"
+                        placeholder="e.g., 1 JAN 2026"
                         className="flex-1 h-10 rounded-md border border-gray-300 px-3 focus:outline-none focus:ring-2 focus:ring-[#f28fa5]"
                       />
                       <button
@@ -740,11 +751,7 @@ function eventupload() {
                         Add
                       </button>
                     </div>
-                    {/* Debug: Show current state */}
-                    <div className="mt-1 text-xs text-gray-500">
-                      Input: "{dateInput}" | Dates count: {selectedDates.length}
-                    </div>
-                    {/* Display selected dates as tags */}
+
                     {selectedDates.length > 0 && (
                       <div className="mt-2 flex flex-wrap gap-2">
                         {selectedDates.map((date, index) => (
@@ -775,7 +782,7 @@ function eventupload() {
                     name="event_time"
                     value={formData.event_time}
                     onChange={handleInputChange}
-                    placeholder="e.g., 18:30"
+                    placeholder="e.g., 18:00 - 19:00 PM"
                     className="flex-1 h-10 rounded-md border border-gray-300 px-3 focus:outline-none focus:ring-2 focus:ring-[#f28fa5]"
                   />
                 </div>
@@ -800,12 +807,12 @@ function eventupload() {
                     name="sale_date"
                     value={formData.sale_date}
                     onChange={handleInputChange}
-                    placeholder="e.g., 2025-09-15"
+                    placeholder="e.g., 1 DEC 2025"
                     className="flex-1 h-10 rounded-md border border-gray-300 px-3 focus:outline-none focus:ring-2 focus:ring-[#f28fa5]"
                   />
                 </div>
 
-                {/* Price */}  
+                {/* Price */}
                 <div className="flex items-center gap-4">
                   <label className="w-32 text-gray-700">Price</label>
                   <div className="flex-1">
@@ -815,7 +822,7 @@ function eventupload() {
                         value={priceInput}
                         onChange={(e) => setPriceInput(e.target.value)}
                         onKeyDown={handlePriceKeyDown}
-                        placeholder="e.g., VIP - 1000 or 500"
+                        placeholder="e.g., VIP-3000"
                         className="flex-1 h-10 rounded-md border border-gray-300 px-3 focus:outline-none focus:ring-2 focus:ring-[#f28fa5]"
                       />
                       <button
@@ -826,10 +833,7 @@ function eventupload() {
                         Add
                       </button>
                     </div>
-                    {/* Debug: Show current state */}
-                    <div className="mt-1 text-xs text-gray-500">
-                      Input: "{priceInput}" | Prices count: {selectedPrices.length}
-                    </div>
+
                     {/* Display selected prices as tags */}
                     {selectedPrices.length > 0 && (
                       <div className="mt-2 flex flex-wrap gap-2">
@@ -875,18 +879,25 @@ function eventupload() {
                 </div>
 
                 {/* Create button */}
-                <div className="pt-2">
-                  <button
-                    onClick={uploadEvent}
-                    disabled={!formData.event_name.trim() || loading}
-                    className={`w-full h-11 rounded-md text-white font-medium transition ${
-                      !formData.event_name.trim() || loading
-                        ? "bg-[#ee6786ff] hover:bg-[#ee6786ff]/90 cursor-default"
-                        : "bg-[#ee6786ff] hover:bg-[#ee6786ff]/90"
-                    }`}
-                  >
-                    {loading ? "Creating Event..." : "Create Event"}
-                  </button>
+                {/* Create button */}
+                <div className="pt-4 flex items-center gap-4">
+                  {/* spacer = label width */}
+                  <div className="w-32"></div>
+
+                  {/* button behaves like an input field */}
+                  <div className="flex-1">
+                    <button
+                      onClick={uploadEvent}
+                      disabled={!formData.event_name.trim() || loading}
+                      className={`w-full h-11 rounded-md text-white font-medium transition ${
+                        !formData.event_name.trim() || loading
+                          ? "bg-[#ee6786ff] hover:bg-[#ee6786ff]/90 cursor-default"
+                          : "bg-[#ee6786ff] hover:bg-[#ee6786ff]/90"
+                      }`}
+                    >
+                      {loading ? "Creating Event..." : "Create Event"}
+                    </button>
+                  </div>
                 </div>
 
                 {/* Status */}
@@ -896,8 +907,8 @@ function eventupload() {
                       uploadStatus.includes("✅")
                         ? "bg-green-100 text-green-800"
                         : uploadStatus.includes("❌")
-                        ? "bg-red-100 text-red-800"
-                        : "bg-yellow-100 text-yellow-800"
+                          ? "bg-red-100 text-red-800"
+                          : "bg-yellow-100 text-yellow-800"
                     }`}
                   >
                     {uploadStatus}
@@ -934,11 +945,12 @@ function eventupload() {
                   {categoryEvents.map((event) => {
                     const coverImage = getCoverImageForDisplay(event);
                     // Use new images array for count, fallback to old format
-                    const imageCount = event?.images?.length > 0 
-                      ? event.images.length
-                      : (event.event_image
-                        ? event.event_image.split(IMAGE_SEPARATOR).length
-                        : 0);
+                    const imageCount =
+                      event?.images?.length > 0
+                        ? event.images.length
+                        : event.event_image
+                          ? event.event_image.split(IMAGE_SEPARATOR).length
+                          : 0;
 
                     return (
                       <button

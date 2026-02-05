@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import AllTickets from "./AllTickets";
 import { useRef } from "react";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api/';
+const API_BASE =
+  import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api/";
 
 function adminHome() {
   const [activeTab, setActiveTab] = useState("tickets");
@@ -12,6 +13,7 @@ function adminHome() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [hoveredRow, setHoveredRow] = useState(null);
   const tabRefs = useRef({});
   const [underlineStyle, setUnderlineStyle] = useState({ width: 0, left: 0 });
 
@@ -170,21 +172,24 @@ function adminHome() {
           {loading && (
             <div className="p-8 text-center text-gray-500">Loading...</div>
           )}
+
           {error && (
             <div className="p-4 bg-red-50 text-red-700 border border-red-200">
               {error}
             </div>
           )}
+
           {!loading && eventsAgg.length === 0 && (
             <div className="text-center text-gray-500 py-10">
               No events found.
             </div>
           )}
+
           {!loading &&
             eventsAgg.map((block) => (
               <div
                 key={block.eventId}
-                className=" shadow-sm border border-gray-200 rounded-lg overflow-hidden"
+                className="shadow-sm border border-gray-200 rounded-lg overflow-hidden"
               >
                 <div className="bg-white px-4 py-4">
                   <h3 className="font-semibold text-lg text-gray-900">
@@ -194,6 +199,7 @@ function adminHome() {
                     {block.eventDate} • {block.eventLocation}
                   </p>
                 </div>
+
                 <div className="overflow-x-auto">
                   <table className="bg-white min-w-full">
                     <thead className="border-b border-gray-400">
@@ -224,6 +230,7 @@ function adminHome() {
                         </th>
                       </tr>
                     </thead>
+
                     <tbody className="divide-y divide-gray-200">
                       {block.rows.length === 0 ? (
                         <tr>
@@ -237,58 +244,78 @@ function adminHome() {
                       ) : (
                         block.rows.map((orderGroup, groupIdx) => (
                           <React.Fragment key={groupIdx}>
-                            {orderGroup.rows.map((r, ticketIdx) => (
-                              <tr
-                                key={`${groupIdx}-${ticketIdx}`}
-                                className="hover:bg-gray-100 transition-colors"
-                              >
-                                {ticketIdx === 0 && (
-                                  <td
-                                    className="px-4 py-3 text-sm text-gray-900 font-medium"
-                                    rowSpan={orderGroup.rows.length}
-                                  >
-                                    {orderGroup.orderId}
+                            {orderGroup.rows.map((r, ticketIdx) => {
+                              const rowKey = `${block.eventId}-${groupIdx}-${ticketIdx}`;
+                              const isHovered = hoveredRow === rowKey;
+                              const isOrderHovered =
+                                hoveredRow &&
+                                hoveredRow.startsWith(
+                                  `${block.eventId}-${groupIdx}-`,
+                                );
+
+                              return (
+                                <tr
+                                  key={rowKey}
+                                  onMouseEnter={() => setHoveredRow(rowKey)}
+                                  onMouseLeave={() => setHoveredRow(null)}
+                                  className={`transition-colors duration-150 ${
+                                    isHovered ? "bg-gray-100" : ""
+                                  }`}
+                                >
+                                  {ticketIdx === 0 && (
+                                    <td
+                                      rowSpan={orderGroup.rows.length}
+                                      className={`px-4 py-3 text-sm text-gray-900 font-medium transition-colors duration-150 ${
+                                        isOrderHovered ? "bg-gray-100" : ""
+                                      }`}
+                                    >
+                                      {orderGroup.orderId}
+                                    </td>
+                                  )}
+
+                                  {ticketIdx === 0 && (
+                                    <td
+                                      rowSpan={orderGroup.rows.length}
+                                      className={`px-4 py-3 text-sm text-gray-900 transition-colors duration-150 ${
+                                        isOrderHovered ? "bg-gray-100" : ""
+                                      }`}
+                                    >
+                                      {orderGroup.email || "—"}
+                                    </td>
+                                  )}
+
+                                  <td className="px-4 py-3 text-sm text-gray-900">
+                                    {r.passportName}
                                   </td>
-                                )}
-                                {ticketIdx === 0 && (
-                                  <td
-                                    className="px-4 py-3 text-sm text-gray-900"
-                                    rowSpan={orderGroup.rows.length}
-                                  >
-                                    {orderGroup.email || "—"}
+                                  <td className="px-4 py-3 text-sm text-gray-900">
+                                    {r.facebookName}
                                   </td>
-                                )}
-                                <td className="px-4 py-3 text-sm text-gray-900">
-                                  {r.passportName}
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-900">
-                                  {r.facebookName}
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-900">
-                                  {r.memberCode}
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-900">
-                                  {r.priorityDate}
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-900 text-right font-medium">
-                                  {r.price}
-                                </td>
-                                <td className="px-4 py-3 text-right">
-                                  <span className={statusChip(r.status)}>
-                                    {r.status}
-                                    {r.status?.toLowerCase() === "cancel" &&
-                                    r.refundStatus &&
-                                    r.refundStatus !== "none"
-                                      ? ` (${r.refundStatus
-                                          .replace("_", " ")
-                                          .replace(/\b\w/g, (l) =>
-                                            l.toUpperCase()
-                                          )})`
-                                      : ""}
-                                  </span>
-                                </td>
-                              </tr>
-                            ))}
+                                  <td className="px-4 py-3 text-sm text-gray-900">
+                                    {r.memberCode}
+                                  </td>
+                                  <td className="px-4 py-3 text-sm text-gray-900">
+                                    {r.priorityDate}
+                                  </td>
+                                  <td className="px-4 py-3 text-sm text-gray-900 text-right font-medium">
+                                    {r.price}
+                                  </td>
+                                  <td className="px-4 py-3 text-right">
+                                    <span className={statusChip(r.status)}>
+                                      {r.status}
+                                      {r.status?.toLowerCase() === "cancel" &&
+                                      r.refundStatus &&
+                                      r.refundStatus !== "none"
+                                        ? ` (${r.refundStatus
+                                            .replace("_", " ")
+                                            .replace(/\b\w/g, (l) =>
+                                              l.toUpperCase(),
+                                            )})`
+                                        : ""}
+                                    </span>
+                                  </td>
+                                </tr>
+                              );
+                            })}
                           </React.Fragment>
                         ))
                       )}
@@ -341,52 +368,54 @@ function adminHome() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {customers.map((customer) => {
-                    const customerOrders = orders.filter(
-                      (o) => o.customer === customer.id
-                    );
-                    const customerTickets = tickets.filter((t) =>
-                      customerOrders.some((o) => o.id === t.order)
-                    );
-                    const pendingCount = customerTickets.filter(
-                      (t) => (t.status || "").toLowerCase() === "pending"
-                    ).length;
-                    const paidCount = customerTickets.filter(
-                      (t) => (t.status || "").toLowerCase() === "paid"
-                    ).length;
+                  {[...customers]
+                    .sort((a, b) => b.id - a.id)
+                    .map((customer) => {
+                      const customerOrders = orders.filter(
+                        (o) => o.customer === customer.id,
+                      );
+                      const customerTickets = tickets.filter((t) =>
+                        customerOrders.some((o) => o.id === t.order),
+                      );
+                      const pendingCount = customerTickets.filter(
+                        (t) => (t.status || "").toLowerCase() === "pending",
+                      ).length;
+                      const paidCount = customerTickets.filter(
+                        (t) => (t.status || "").toLowerCase() === "paid",
+                      ).length;
 
-                    return (
-                      <tr
-                        key={customer.id}
-                        className="hover:bg-gray-100 transition-colors"
-                      >
-                        <td className="px-6 py-4 text-sm text-gray-900">
-                          {customer.id}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">
-                          <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-xs font-semibold text-gray-700">
-                            {(customer.name || "U")[0].toUpperCase()}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">
-                          {customer.name || "—"}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">
-                          {customer.email || "—"}
-                        </td>
-                        <td className="px-6 py-4 text-sm">
-                          <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                            {pendingCount}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-sm">
-                          <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            {paidCount}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                      return (
+                        <tr
+                          key={customer.id}
+                          className="hover:bg-gray-100 transition-colors"
+                        >
+                          <td className="px-6 py-4 text-sm text-gray-900">
+                            {customer.id}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-900">
+                            <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-xs font-semibold text-gray-700">
+                              {(customer.name || "U")[0].toUpperCase()}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-900">
+                            {customer.name || "—"}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-900">
+                            {customer.email || "—"}
+                          </td>
+                          <td className="px-6 py-4 text-sm">
+                            <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                              {pendingCount}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-sm">
+                            <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              {paidCount}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
                 </tbody>
               </table>
             </div>
