@@ -41,10 +41,12 @@ function EditEvent() {
   const [selectedPrices, setSelectedPrices] = useState([]);
 
   // Posters (existing + new) via a combined view
-  // existingImages: array of base64/url strings from backend
+  // existingImages: array of objects {id, image_url} from backend
   const [existingImages, setExistingImages] = useState([]);
   // newFiles: [{ file, preview }]
   const [newFiles, setNewFiles] = useState([]);
+  // Track IDs of images to delete
+  const [imagesToDelete, setImagesToDelete] = useState([]);
 
   // UI
   const [loading, setLoading] = useState(false);
@@ -165,18 +167,15 @@ function EditEvent() {
         setSelectedPrices([]);
       }
 
-      // Use the new images array structure with image_url
+      // Use the new images array structure with id and image_url
       if (data.images?.length > 0) {
-        const imageUrls = data.images
-          .map((img) => img.image_url)
-          .filter(Boolean);
-        setExistingImages(imageUrls);
+        setExistingImages(data.images.map(img => ({ id: img.id, image_url: img.image_url })));
       } else if (data.event_image) {
         // Fallback for old event_image format
         const arr = data.event_image.includes(IMAGE_SEPARATOR)
           ? data.event_image.split(IMAGE_SEPARATOR)
           : [data.event_image];
-        setExistingImages(arr);
+        setExistingImages(arr.map(url => ({ id: null, image_url: url })));
       } else {
         setExistingImages([]);
       }
@@ -246,7 +245,7 @@ function EditEvent() {
   // Posters: combined view (existing first, then newly added)
   const posters = useMemo(
     () => [
-      ...existingImages.map((url) => ({ kind: "existing", url })),
+      ...existingImages.map((img) => ({ kind: "existing", url: img.image_url, id: img.id })),
       ...newFiles.map((nf) => ({
         kind: "new",
         url: nf.preview,
@@ -278,6 +277,10 @@ function EditEvent() {
 
   const removePosterAt = (idx) => {
     // Remove from combined; then split back into existing + new
+    const item = posters[idx];
+    if (item && item.kind === "existing" && item.id) {
+      setImagesToDelete(prev => [...prev, item.id]);
+    }
     const next = posters.filter((_, i) => i !== idx);
     splitAndApply(next);
   };
@@ -306,7 +309,7 @@ function EditEvent() {
     const nextExisting = [];
     const nextNew = [];
     combined.forEach((it) => {
-      if (it.kind === "existing") nextExisting.push(it.url);
+      if (it.kind === "existing") nextExisting.push({ id: it.id, image_url: it.url });
       else nextNew.push({ file: it.file, preview: it.url });
     });
     setExistingImages(nextExisting);
@@ -383,10 +386,14 @@ function EditEvent() {
           formDataToSend.append("images", fileObj.file);
         }
       });
-      // Add existing image URLs to inform backend which to keep
-      existingImages.forEach((imageUrl, index) => {
-        formDataToSend.append(`existing_images[${index}]`, imageUrl);
+      // Add existing image URLs to inform backend which to keep (optional, if needed)
+      existingImages.forEach((img, index) => {
+        formDataToSend.append(`existing_images[${index}]`, img.image_url);
       });
+      // Add images_to_delete as JSON string
+      if (imagesToDelete.length > 0) {
+        formDataToSend.append("images_to_delete", JSON.stringify(imagesToDelete));
+      }
 
       const res = await fetch(`${API_BASE}events/${id}/`, {
         method: "PUT",
