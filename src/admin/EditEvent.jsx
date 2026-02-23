@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { FiEye, FiEyeOff, FiLoader } from "react-icons/fi";
 
 function EditEvent() {
   const { id } = useParams();
@@ -51,6 +52,8 @@ function EditEvent() {
   // UI
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState("");
+  const [isHidden, setIsHidden] = useState(false);
+  const [toggling, setToggling] = useState(false);
   const fileInputRef = useRef(null);
 
   const IMAGE_SEPARATOR = "|||SEPARATOR|||";
@@ -179,6 +182,8 @@ function EditEvent() {
       } else {
         setExistingImages([]);
       }
+      // set hidden state
+      setIsHidden(!!data.is_hidden);
     } catch (e) {
       console.error(e);
     }
@@ -459,6 +464,34 @@ function EditEvent() {
     }
   };
 
+  const toggleEventHide = async () => {
+    if (!getToken()) {
+      setStatus("❌ Please login as admin to change visibility");
+      navigate('/admin/login');
+      return;
+    }
+    setToggling(true);
+    setStatus("");
+    try {
+      const res = await fetch(`${API_BASE}events/${id}/toggle_hide/`, {
+        method: 'POST',
+        headers: authHeaders(),
+      });
+      if (!res.ok) {
+        const txt = await res.text().catch(() => '');
+        throw new Error(`Toggle failed (${res.status}) ${txt}`);
+      }
+      // Refresh event data
+      await fetchEvent();
+      setStatus('✅ Visibility updated');
+    } catch (e) {
+      console.error(e);
+      setStatus('❌ ' + (e.message || 'Failed to toggle visibility'));
+    } finally {
+      setToggling(false);
+    }
+  };
+
   const InlineRow = ({ label, name, placeholder }) => (
     <div className="flex items-start gap-4">
       <div className="w-32 text-gray-700 pt-2">{label}</div>
@@ -534,28 +567,48 @@ function EditEvent() {
           </button>
           <h2 className="text-2xl font-bold">Edit Event</h2>
         </div>
-        <button
-          onClick={deleteEvent}
-          className=" flex items-center gap-2 px-4 py-2 rounded-md text-gray-700 hover:text-red-600 hover:bg-red-50 transition"
-          title="Delete Event"
-        >
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+        <div className="flex items-center gap-3"> 
+          <button
+            onClick={toggleEventHide}
+            disabled={toggling}
+            className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium transition-all ${
+              isHidden ? 'bg-green-50 text-green-800 hover:bg-green-100' : 'bg-pink-50 text-pink-700 hover:bg-pink-100'
+            } ${toggling ? 'opacity-80 cursor-wait' : ''}`}
+            title={isHidden ? 'Unhide event' : 'Hide event'}
           >
-            <polyline points="3 6 5 6 21 6"></polyline>
-            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-            <line x1="10" y1="11" x2="10" y2="17"></line>
-            <line x1="14" y1="11" x2="14" y2="17"></line>
-          </svg>
-          <span className="text-sm font-medium">Delete Event</span>
-        </button>
+            {toggling ? (
+              <FiLoader className="w-4 h-4 animate-spin" />
+            ) : isHidden ? (
+              <FiEyeOff className="w-4 h-4" />
+            ) : (
+              <FiEye className="w-4 h-4" />
+            )}
+            <span className="text-sm">{isHidden ? 'Unhide' : 'Hide'}</span>
+          </button>
+
+          <button
+            onClick={deleteEvent}
+            className=" flex items-center gap-2 px-4 py-2 rounded-md text-gray-700 hover:text-red-600 hover:bg-red-50 transition"
+            title="Delete Event"
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              <line x1="10" y1="11" x2="10" y2="17"></line>
+              <line x1="14" y1="11" x2="14" y2="17"></line>
+            </svg>
+            <span className="text-sm font-medium">Delete Event</span>
+          </button>
+        </div>
       </div>
       <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden relative">
         {/* Delete button in top right */}

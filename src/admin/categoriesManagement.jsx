@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { LuTrash2 } from "react-icons/lu";
+import { FiEye, FiEyeOff, FiLoader } from "react-icons/fi";
 
 function CategoriesManagement() {
   const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api/';
@@ -18,6 +19,7 @@ function CategoriesManagement() {
   const [categories, setCategories] = useState([]);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [togglingCategoryId, setTogglingCategoryId] = useState(null);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryImage, setNewCategoryImage] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -98,6 +100,22 @@ function CategoriesManagement() {
     } catch (err) {
       console.error(err);
       setError("Failed to delete category");
+    }
+  };
+
+  const toggleCategoryHide = async (id) => {
+    if (!getToken()) return setError("Please login as admin to toggle category");
+    setTogglingCategoryId(id);
+    try {
+      await axios.post(`${API_BASE}categories/${id}/toggle_hide/`, null, {
+        headers: authHeaders(),
+      });
+      await fetchCategories();
+    } catch (err) {
+      console.error(err);
+      setError("Failed to toggle category visibility");
+    } finally {
+      setTogglingCategoryId(null);
     }
   };
 
@@ -236,13 +254,32 @@ function CategoriesManagement() {
                     <h3 className="font-semibold text-gray-800 truncate">
                       {category.category_name}
                     </h3>
-                    <button
-                      onClick={() => deleteCategory(category.id)}
-                      className="p-2 rounded-md text-black hover:scale-105 transition-all"
-                      title="Delete"
-                    >
-                      <LuTrash2 size={18} />
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => toggleCategoryHide(category.id)}
+                        className={`px-2 py-1 rounded-md text-sm inline-flex items-center gap-2 ${
+                          category.is_hidden ? 'bg-green-50 text-green-800 hover:bg-green-100' : 'bg-pink-50 text-pink-700 hover:bg-pink-100'
+                        } ${togglingCategoryId === category.id ? 'opacity-80 cursor-wait' : ''}`}
+                        title={category.is_hidden ? 'Unhide' : 'Hide'}
+                      >
+                        {togglingCategoryId === category.id ? (
+                          <FiLoader className="w-4 h-4 animate-spin" />
+                        ) : category.is_hidden ? (
+                          <FiEyeOff className="w-4 h-4" />
+                        ) : (
+                          <FiEye className="w-4 h-4" />
+                        )}
+                        <span className="text-sm">{category.is_hidden ? 'Unhide' : 'Hide'}</span>
+                      </button>
+
+                      <button
+                        onClick={() => deleteCategory(category.id)}
+                        className="p-2 rounded-md text-black hover:scale-105 transition-all"
+                        title="Delete"
+                      >
+                        <LuTrash2 size={18} />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}

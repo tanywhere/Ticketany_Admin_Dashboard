@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import AllTickets from "./AllTickets";
 import { useRef } from "react";
+import { FiEye, FiEyeOff, FiLoader } from "react-icons/fi";
 
 const API_BASE =
   import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api/";
@@ -13,6 +14,7 @@ function adminHome() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [togglingEventId, setTogglingEventId] = useState(null);
   const [hoveredRow, setHoveredRow] = useState(null);
   const tabRefs = useRef({});
   const [underlineStyle, setUnderlineStyle] = useState({ width: 0, left: 0 });
@@ -79,6 +81,7 @@ function adminHome() {
 
   // Aggregate tickets by event
   const eventsAgg = events.map((event) => {
+    const isHidden = !!event.is_hidden;
     const eventTickets = tickets.filter((t) => t.event === event.id);
 
     // Create a map of order IDs to their tickets
@@ -114,6 +117,7 @@ function adminHome() {
     return {
       eventId: event.id,
       eventName: event.event_name || "Unknown Event",
+      isHidden,
       eventDate: event.event_date || "—",
       eventLocation: event.event_location || "—",
       rows: mergedRows,
@@ -123,6 +127,25 @@ function adminHome() {
   useEffect(() => {
     loadData();
   }, []);
+
+  const toggleEventHide = async (eventId) => {
+    setTogglingEventId(eventId);
+    setError("");
+    try {
+      const res = await fetch(`${API_BASE}events/${eventId}/toggle_hide/`, {
+        method: "POST",
+        headers: {
+          ...authHeaders(),
+        },
+      });
+      if (!res.ok) throw new Error(`Failed to toggle hide (${res.status})`);
+      await loadData();
+    } catch (e) {
+      setError(e.message || "Unable to toggle event hide");
+    } finally {
+      setTogglingEventId(null);
+    }
+  };
 
   useEffect(() => {
     const activeEl = tabRefs.current[activeTab];
@@ -192,12 +215,38 @@ function adminHome() {
                 className="shadow-sm border border-gray-200 rounded-lg overflow-hidden"
               >
                 <div className="bg-white px-4 py-4">
-                  <h3 className="font-semibold text-lg text-gray-900">
-                    {block.eventName}
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    {block.eventDate} • {block.eventLocation}
-                  </p>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="font-semibold text-lg text-gray-900">
+                        {block.eventName}
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        {block.eventDate} • {block.eventLocation}
+                      </p>
+                    </div>
+                    <div>
+                      {/* Modern hide/unhide pill with icon and loading state */}
+                      <button
+                        onClick={() => toggleEventHide(block.eventId)}
+                        disabled={!!togglingEventId}
+                        className={`ml-4 inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium transition-all focus:outline-none ${
+                          block.isHidden
+                            ? 'bg-green-50 text-green-800 hover:bg-green-100'
+                            : 'bg-pink-50 text-pink-700 hover:bg-pink-100'
+                        } ${togglingEventId === block.eventId ? 'opacity-80 cursor-wait' : ''}`}
+                        title={block.isHidden ? 'Unhide event' : 'Hide event'}
+                      >
+                        {togglingEventId === block.eventId ? (
+                          <FiLoader className="w-4 h-4 animate-spin" />
+                        ) : block.isHidden ? (
+                          <FiEyeOff className="w-4 h-4" />
+                        ) : (
+                          <FiEye className="w-4 h-4" />
+                        )}
+                        <span className="text-sm">{block.isHidden ? 'Unhide' : 'Hide'}</span>
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="overflow-x-auto">
