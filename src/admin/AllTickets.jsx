@@ -154,6 +154,8 @@ function AllTickets() {
     return eventNameById[eid] || `Event #${eid}`;
   }, [selectedTicket, eventNameById]);
 
+  const selectedTicketStatus = (selectedTicket?.status || "").toLowerCase();
+
   const columnCount = useMemo(() => {
     switch (filter) {
       case "paid":
@@ -218,6 +220,9 @@ function AllTickets() {
         return "bg-gray-100 text-gray-800";
     }
   };
+
+  const selectedStatusLabel =
+    STATUS_LABELS[selectedTicketStatus] || selectedTicket?.status || "—";
 
   return (
     <div className="max-w-full mx-auto">
@@ -686,125 +691,224 @@ function AllTickets() {
           aria-modal="true"
         >
           <div
-            className="absolute inset-0 bg-black/50"
+            className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
             onClick={() => setSelectedTicket(null)}
           />
 
-          <div className="relative w-full max-w-3xl bg-white rounded-xl shadow-xl border border-gray-200">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900">
-                  Order details
-                </h2>
-                <p className="text-sm text-gray-500">Order ID: {selectedTicket._order_id ?? "—"}</p>
+          <div className="relative w-full max-w-5xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
+            <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-700 px-6 py-6 text-white">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">
+                    Ticket details
+                  </p>
+                  <h2 className="mt-2 text-2xl font-semibold sm:text-3xl">
+                    {selectedEventName}
+                  </h2>
+                  <p className="mt-2 text-sm text-slate-300">
+                    Order ID: {selectedTicket._order_id ?? "—"}
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span
+                    className={`inline-flex items-center rounded-full px-3 py-1.5 text-sm font-semibold ${statusBadgeClass(
+                      selectedTicket.status
+                    )}`}
+                  >
+                    {selectedStatusLabel}
+                  </span>
+                </div>
               </div>
+            </div>
+
+            <div className="absolute right-4 top-4 sm:right-5 sm:top-5">
               <button
                 type="button"
                 onClick={() => setSelectedTicket(null)}
-                className="p-2 rounded-md hover:bg-gray-100 text-gray-600"
+                className="rounded-full bg-white/10 p-2 text-white transition hover:bg-white/20"
                 aria-label="Close"
               >
                 <FiX size={18} />
               </button>
             </div>
 
-            <div className="px-5 py-4 max-h-[75vh] overflow-y-auto">
-              <div className="rounded-lg border border-gray-200 p-4">
-                <h3 className="text-sm font-semibold text-gray-900 mb-3">
-                  Ticket details
-                </h3>
-
-                <div className="space-y-4">
-                  <div>
-                    <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                      Order ID
-                    </div>
-                    <div className="text-lg sm:text-xl font-bold text-gray-900">
-                      {selectedTicket._order_id ?? "—"}
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                      Event
-                    </div>
-                    <div className="text-base sm:text-lg font-semibold text-gray-900">
-                      {selectedEventName}
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                      Name
-                    </div>
-                    <div className="text-base sm:text-lg font-semibold text-gray-900">
-                      {selectedTicket.passport_name ?? "—"}
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                      Facebook Name
-                    </div>
-                    <div className="text-base sm:text-lg font-semibold text-gray-900">
-                      {selectedTicket.facebook_name ?? "—"}
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                      Member Code
-                    </div>
-                    <div className="text-base sm:text-lg font-semibold text-gray-900">
-                      {selectedTicket.member_code ?? "—"}
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                      Status
-                    </div>
-                    <div className="mt-1">
-                      <span
-                        className={`inline-flex items-center px-3 py-1.5 rounded-md text-sm font-semibold ${statusBadgeClass(
-                          selectedTicket.status
-                        )}`}
-                      >
-                        {STATUS_LABELS[(selectedTicket.status || "").toLowerCase()] ||
-                          selectedTicket.status ||
-                          "—"}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">
-                      Price (all priorities)
-                    </div>
-                    <div className="space-y-3">
-                      <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
-                        <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                          1st priority
+            <div className="max-h-[78vh] overflow-y-auto bg-slate-50 px-6 py-6">
+              <div className="grid gap-6">
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:col-span-2">
+                    <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">
+                      Customer info
+                    </p>
+                    <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                      <div className="rounded-xl bg-slate-50 p-4">
+                        <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          Passport Name
                         </div>
-                        <div className="text-lg font-bold text-gray-900">
-                          {selectedTicket.fst_pt ?? "—"}
+                        <div className="mt-2 text-lg font-semibold text-slate-900 break-words">
+                          {selectedTicket.passport_name ?? "—"}
                         </div>
                       </div>
-                      <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
-                        <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                          2nd priority
+                      <div className="rounded-xl bg-slate-50 p-4">
+                        <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          Facebook Name
                         </div>
-                        <div className="text-lg font-bold text-gray-900">
-                          {selectedTicket.snd_pt ?? "—"}
+                        <div className="mt-2 text-lg font-semibold text-slate-900 break-words">
+                          {selectedTicket.facebook_name ?? "—"}
                         </div>
                       </div>
-                      <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
-                        <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                          3rd priority
+                      <div className="rounded-xl bg-slate-50 p-4 sm:col-span-2">
+                        <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          Member Code
                         </div>
-                        <div className="text-lg font-bold text-gray-900">
-                          {selectedTicket.trd_pt ?? selectedTicket.thrd_pt ?? "—"}
+                        <div className="mt-2 text-lg font-semibold text-slate-900 break-words">
+                          {selectedTicket.member_code ?? "—"}
                         </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">
+                      Overview
+                    </p>
+                    <div className="mt-4 space-y-4">
+                      <div className="rounded-xl bg-slate-50 p-4">
+                        <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          Order ID
+                        </div>
+                        <div className="mt-2 text-2xl font-bold text-slate-900">
+                          {selectedTicket._order_id ?? "—"}
+                        </div>
+                      </div>
+                      <div className="rounded-xl bg-slate-50 p-4">
+                        <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          Status
+                        </div>
+                        <div className="mt-3">
+                          <span
+                            className={`inline-flex items-center rounded-full px-3 py-1.5 text-sm font-semibold ${statusBadgeClass(
+                              selectedTicket.status
+                            )}`}
+                          >
+                            {selectedStatusLabel}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {(selectedTicketStatus === "complete" ||
+                  selectedTicketStatus === "paid") && (
+                  <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">
+                      {selectedTicketStatus === "complete"
+                        ? "Completion details"
+                        : "Payment details"}
+                    </p>
+                    <div
+                      className={`mt-4 grid gap-4 ${
+                        selectedTicketStatus === "complete"
+                          ? "sm:grid-cols-2 lg:grid-cols-4"
+                          : "sm:grid-cols-2"
+                      }`}
+                    >
+                      {selectedTicketStatus === "complete" && (
+                        <>
+                          <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4">
+                            <div className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+                              Selling Price
+                            </div>
+                            <div className="mt-2 text-lg font-bold text-slate-900">
+                              {selectedTicket.selling_price ?? "—"}
+                            </div>
+                          </div>
+                          <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4">
+                            <div className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+                              Zone
+                            </div>
+                            <div className="mt-2 text-lg font-bold text-slate-900">
+                              {selectedTicket.zone ?? "—"}
+                            </div>
+                          </div>
+                          <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4">
+                            <div className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+                              Row
+                            </div>
+                            <div className="mt-2 text-lg font-bold text-slate-900">
+                              {selectedTicket.row ?? "—"}
+                            </div>
+                          </div>
+                          <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4">
+                            <div className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+                              Seat
+                            </div>
+                            <div className="mt-2 text-lg font-bold text-slate-900">
+                              {selectedTicket.seat ?? "—"}
+                            </div>
+                          </div>
+                        </>
+                      )}
+
+                      {selectedTicketStatus === "paid" && (
+                        <>
+                          <div className="rounded-xl border border-sky-100 bg-sky-50 p-4">
+                            <div className="text-xs font-semibold uppercase tracking-wide text-sky-700">
+                              Customer Payment
+                            </div>
+                            <div className="mt-2 text-lg font-bold text-slate-900 break-words">
+                              {selectedTicket.customer_payment ?? "—"}
+                            </div>
+                          </div>
+                          <div className="rounded-xl border border-sky-100 bg-sky-50 p-4">
+                            <div className="text-xs font-semibold uppercase tracking-wide text-sky-700">
+                              Payment Date
+                            </div>
+                            <div className="mt-2 text-lg font-bold text-slate-900 break-words">
+                              {selectedTicket.payment_date ?? "—"}
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">
+                        Price priorities
+                      </p>
+                      <p className="mt-1 text-sm text-slate-500">
+                        All available ticket priority prices
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 grid gap-4 md:grid-cols-3">
+                    <div className="rounded-2xl border border-rose-100 bg-gradient-to-br from-rose-50 via-white to-rose-50 p-5">
+                      <div className="text-xs font-semibold uppercase tracking-wide text-rose-500">
+                        1st priority
+                      </div>
+                      <div className="mt-3 text-2xl font-bold text-slate-900 break-words">
+                        {selectedTicket.fst_pt ?? "—"}
+                      </div>
+                    </div>
+                    <div className="rounded-2xl border border-amber-100 bg-gradient-to-br from-amber-50 via-white to-amber-50 p-5">
+                      <div className="text-xs font-semibold uppercase tracking-wide text-amber-600">
+                        2nd priority
+                      </div>
+                      <div className="mt-3 text-2xl font-bold text-slate-900 break-words">
+                        {selectedTicket.snd_pt ?? "—"}
+                      </div>
+                    </div>
+                    <div className="rounded-2xl border border-fuchsia-100 bg-gradient-to-br from-fuchsia-50 via-white to-fuchsia-50 p-5">
+                      <div className="text-xs font-semibold uppercase tracking-wide text-fuchsia-600">
+                        3rd priority
+                      </div>
+                      <div className="mt-3 text-2xl font-bold text-slate-900 break-words">
+                        {selectedTicket.trd_pt ?? selectedTicket.thrd_pt ?? "—"}
                       </div>
                     </div>
                   </div>
@@ -812,11 +916,11 @@ function AllTickets() {
               </div>
             </div>
 
-            <div className="flex justify-end gap-2 px-5 py-4 border-t border-gray-200">
+            <div className="flex justify-end gap-2 border-t border-slate-200 bg-white px-6 py-4">
               <button
                 type="button"
                 onClick={() => setSelectedTicket(null)}
-                className="px-4 py-2 rounded-md border border-gray-300 bg-white text-gray-800 hover:bg-gray-50"
+                className="rounded-xl border border-slate-300 bg-white px-4 py-2 font-medium text-slate-700 transition hover:bg-slate-50"
               >
                 Close
               </button>
