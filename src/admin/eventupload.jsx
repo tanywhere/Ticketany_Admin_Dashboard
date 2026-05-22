@@ -23,6 +23,10 @@ function eventupload() {
   const [dateInput, setDateInput] = useState("");
   const [selectedDates, setSelectedDates] = useState([]);
 
+  // Sale date input state (for sale date tags)
+  const [saleDateInput, setSaleDateInput] = useState("");
+  const [selectedSaleDates, setSelectedSaleDates] = useState([]);
+
   // Price input state (for price tags)
   const [priceInput, setPriceInput] = useState("");
   const [selectedPrices, setSelectedPrices] = useState([]);
@@ -143,6 +147,31 @@ function eventupload() {
   const removeDateTag = (index) => {
     const updatedDates = selectedDates.filter((_, i) => i !== index);
     setSelectedDates(updatedDates);
+  };
+
+  // Handle sale date input with Enter key
+  const handleSaleDateKeyDown = (e) => {
+    if (e.key === "Enter" && saleDateInput.trim()) {
+      e.preventDefault();
+      const newSaleDate = saleDateInput.trim();
+      setSelectedSaleDates((prev) => [...prev, newSaleDate]);
+      setSaleDateInput("");
+    }
+  };
+
+  // Handle sale date input with Add button
+  const handleAddSaleDate = () => {
+    if (saleDateInput.trim()) {
+      const newSaleDate = saleDateInput.trim();
+      setSelectedSaleDates((prev) => [...prev, newSaleDate]);
+      setSaleDateInput("");
+    }
+  };
+
+  // Remove sale date tag
+  const removeSaleDateTag = (index) => {
+    const updatedSaleDates = selectedSaleDates.filter((_, i) => i !== index);
+    setSelectedSaleDates(updatedSaleDates);
   };
 
   // Handle price input with Enter key
@@ -417,8 +446,13 @@ function eventupload() {
         formDataToSend.append("ticket_price", JSON.stringify(null));
       }
 
-      if (formData.sale_date) {
-        formDataToSend.append("sale_date", formData.sale_date);
+      const saleDatesToSend = [
+        ...selectedSaleDates,
+        ...(saleDateInput.trim() ? [saleDateInput.trim()] : []),
+      ];
+
+      if (saleDatesToSend.length > 0) {
+        formDataToSend.append("sale_date", JSON.stringify(saleDatesToSend));
       }
 
       // IMPORTANT: Category as integer (foreign key)
@@ -497,6 +531,8 @@ function eventupload() {
         });
         setSelectedDates([]);
         setDateInput("");
+        setSelectedSaleDates([]);
+        setSaleDateInput("");
         setSelectedPrices([]);
         setPriceInput("");
         setSelectedFiles([]);
@@ -811,18 +847,48 @@ function eventupload() {
                 <div className="flex items-center gap-4">
                   <label className="w-32 text-gray-700">Sale Date</label>
                   <div className="flex-1">
-                    <input
-                      type="text"
-                      name="sale_date"
-                      value={formData.sale_date}
-                      onChange={handleInputChange}
-                      maxLength={100}
-                      placeholder="e.g., 1 DEC 2025"
-                      className="w-full h-10 rounded-md border border-gray-300 px-3 focus:outline-none focus:ring-2 focus:ring-[#f28fa5]"
-                    />
-                    <div className="mt-1 text-xs text-gray-500">
-                      {formData.sale_date.length}/100 characters
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={saleDateInput}
+                        onChange={(e) => setSaleDateInput(e.target.value)}
+                        onKeyDown={handleSaleDateKeyDown}
+                        maxLength={100}
+                        placeholder="e.g., 1 DEC 2025"
+                        className="flex-1 h-10 rounded-md border border-gray-300 px-3 focus:outline-none focus:ring-2 focus:ring-[#f28fa5]"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddSaleDate}
+                        className="px-4 h-10 bg-[#f28fa5] text-white rounded-md hover:bg-[#f28fa5]/90 font-medium"
+                      >
+                        Add
+                      </button>
                     </div>
+                    <div className="mt-1 text-xs text-gray-500">
+                      {saleDateInput.length}/100 characters
+                    </div>
+
+                    {/* Display selected sale dates as tags */}
+                    {selectedSaleDates.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {selectedSaleDates.map((saleDate, index) => (
+                          <div
+                            key={index}
+                            className="inline-flex items-center gap-2 bg-[#f28fa5] text-white px-3 py-1 rounded-full text-sm"
+                          >
+                            <span>{saleDate}</span>
+                            <button
+                              type="button"
+                              onClick={() => removeSaleDateTag(index)}
+                              className="text-white hover:text-gray-200 font-bold"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
 
