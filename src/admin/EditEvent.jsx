@@ -37,6 +37,10 @@ function EditEvent() {
   const [dateInput, setDateInput] = useState("");
   const [selectedDates, setSelectedDates] = useState([]);
 
+  // Sale date input state (for sale date tags)
+  const [saleDateInput, setSaleDateInput] = useState("");
+  const [selectedSaleDates, setSelectedSaleDates] = useState([]);
+
   // Price input state (for price tags)
   const [priceInput, setPriceInput] = useState("");
   const [selectedPrices, setSelectedPrices] = useState([]);
@@ -73,7 +77,6 @@ function EditEvent() {
     event_date: false,
     event_time: false,
     event_location: false,
-    sale_date: false,
     ticket_price: false,
   });
 
@@ -118,7 +121,7 @@ function EditEvent() {
         event_name: data.event_name || "",
         event_location: data.event_location || "",
         event_time: data.event_time || "",
-        sale_date: data.sale_date || "",
+        sale_date: "",
         category: data.category || "",
       });
 
@@ -145,6 +148,9 @@ function EditEvent() {
       } else {
         setSelectedDates([]);
       }
+
+      // Handle sale_date - convert to array of sale date tags
+      setSelectedSaleDates(parseTagValues(data.sale_date));
 
       // Handle ticket_price - convert to array of price tags
       if (data.ticket_price) {
@@ -205,6 +211,35 @@ function EditEvent() {
     setEditing((p) => ({ ...p, [name]: !p[name] }));
   };
 
+  const parseTagValues = (value) => {
+    if (!value) return [];
+
+    if (Array.isArray(value)) {
+      return value.map((item) => String(item));
+    }
+
+    if (typeof value === "object") {
+      return Object.entries(value).map(([key, val]) => `${key}: ${val}`);
+    }
+
+    if (typeof value === "string") {
+      try {
+        const parsed = JSON.parse(value);
+        if (Array.isArray(parsed)) {
+          return parsed.map((item) => String(item));
+        }
+        if (parsed && typeof parsed === "object") {
+          return Object.entries(parsed).map(([key, val]) => `${key}: ${val}`);
+        }
+        return [String(parsed)];
+      } catch {
+        return [value];
+      }
+    }
+
+    return [String(value)];
+  };
+
   // Handle date input with Enter key
   const handleDateKeyDown = (e) => {
     if (e.key === "Enter" && dateInput.trim()) {
@@ -228,6 +263,31 @@ function EditEvent() {
   const removeDateTag = (index) => {
     const updatedDates = selectedDates.filter((_, i) => i !== index);
     setSelectedDates(updatedDates);
+  };
+
+  // Handle sale date input with Enter key
+  const handleSaleDateKeyDown = (e) => {
+    if (e.key === "Enter" && saleDateInput.trim()) {
+      e.preventDefault();
+      const newSaleDate = saleDateInput.trim();
+      setSelectedSaleDates((prev) => [...prev, newSaleDate]);
+      setSaleDateInput("");
+    }
+  };
+
+  // Handle sale date input with Add button
+  const handleAddSaleDate = () => {
+    if (saleDateInput.trim()) {
+      const newSaleDate = saleDateInput.trim();
+      setSelectedSaleDates((prev) => [...prev, newSaleDate]);
+      setSaleDateInput("");
+    }
+  };
+
+  // Remove sale date tag
+  const removeSaleDateTag = (index) => {
+    const updatedSaleDates = selectedSaleDates.filter((_, i) => i !== index);
+    setSelectedSaleDates(updatedSaleDates);
   };
 
   // Handle price input with Enter key
@@ -382,7 +442,14 @@ function EditEvent() {
         formDataToSend.append("event_date", JSON.stringify(null));
       }
 
-      formDataToSend.append("sale_date", formData.sale_date || "");
+      const saleDatesToSend = [
+        ...selectedSaleDates,
+        ...(saleDateInput.trim() ? [saleDateInput.trim()] : []),
+      ];
+      formDataToSend.append(
+        "sale_date",
+        saleDatesToSend.length > 0 ? JSON.stringify(saleDatesToSend) : "",
+      );
 
       // Handle ticket_price as array
       if (selectedPrices.length > 0) {
@@ -427,6 +494,7 @@ function EditEvent() {
         setStatus(`❌ Failed: ${JSON.stringify(data)}`);
       } else {
         setStatus("✅ Event updated successfully!");
+        setSaleDateInput("");
         setNewFiles([]); // new files are now part of existing images on server
         // Refresh to pull normalized data from backend
         setTimeout(fetchEvent, 350);
@@ -777,12 +845,53 @@ function EditEvent() {
                 placeholder="Venue or address"
                 maxLength={255}
               />
-              <InlineRow
-                label="Sale Date"
-                name="sale_date"
-                placeholder="e.g, 1 July 2025 - 2 Sep 2025"
-                maxLength={100}
-              />
+              {/* Sale Date */}
+              <div className="flex items-center gap-4">
+                <label className="w-32 text-gray-700">Sale Date</label>
+                <div className="flex-1">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={saleDateInput}
+                      onChange={(e) => setSaleDateInput(e.target.value)}
+                      onKeyDown={handleSaleDateKeyDown}
+                      placeholder="e.g, 1 July 2025 - 2 Sep 2025"
+                      maxLength={100}
+                      className="flex-1 h-10 rounded-md border border-gray-300 px-3 focus:outline-none focus:ring-2 focus:ring-[#f28fa5]"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddSaleDate}
+                      className="px-4 h-10 bg-[#f28fa5] text-white rounded-md hover:bg-[#f28fa5]/90 font-medium"
+                    >
+                      Add
+                    </button>
+                  </div>
+                  <div className="mt-1 text-xs text-gray-500">
+                    {saleDateInput.length}/100 characters
+                  </div>
+                  {/* Display selected sale dates as tags */}
+                  {selectedSaleDates.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {selectedSaleDates.map((saleDate, index) => (
+                        <div
+                          key={index}
+                          className="inline-flex items-center gap-2 bg-[#f28fa5] text-white px-3 py-1 rounded-full text-sm"
+                        >
+                          <span>{saleDate}</span>
+                          <button
+                            type="button"
+                            onClick={() => removeSaleDateTag(index)}
+                            className="text-white hover:text-gray-200 font-bold"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
 
               {/* Price */}
               <div className="flex items-center gap-4">
